@@ -1,15 +1,34 @@
 use std::{env::current_dir, io, path::PathBuf};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Direction, Layout, Rect}, style::Stylize, text::{Line, Text}, widgets::{Block, BorderType, Paragraph, Widget}};
+use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Direction, Layout}, style::Stylize, widgets::{Block, BorderType, Paragraph}};
 use clap::{Parser};
+use strum::{EnumIter, IntoEnumIterator};
 
 mod path_field;
 mod command;
-use crate::{command::Command, path_field::PathField};
+mod dependencies;
+use crate::{command::Command, dependencies::{focus_toggler, render_widget}, path_field::PathField};
 
 enum EntryType {
     File,
     Dir,
+}
+
+#[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
+pub enum CurrentWidget {
+    PathField,
+    CommandBar,
+    Explorer,
+    QuickAccess,
+}
+
+impl CurrentWidget {
+    fn next(&self) -> Self {
+        let variants: Vec<CurrentWidget> = CurrentWidget::iter().collect();
+        let current_index = variants.iter().position(|&v| v == *self).unwrap();
+        let next_index = (current_index + 1) % variants.len();
+        variants[next_index]
+    }
 }
 
 struct FileEntry {
@@ -20,12 +39,13 @@ struct FileEntry {
     hidden: bool,
 }
 
-struct App {
+pub struct App {
     exit: bool,
     quick_access: QuickAccess,
     path_field: PathField,
     command: Command,
     explorer: Explorer,
+    focused_widget: CurrentWidget,
 }
 
 struct QuickAccess {
@@ -90,12 +110,16 @@ impl App {
         render_widget(frame, &self.path_field, path_bar);
 
         // Rendering the instructions area
-        frame.render_widget(&self.command, vertical_split_areas[2]);
+        render_widget(frame, &self.command, vertical_split_areas[2]);
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
         if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Char('q') {
             self.exit = true;
+        } else if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Tab {
+            focus_toggler(self);
+            self.focused_widget = self.focused_widget.next();
+            focus_toggler(self);
         }
         Ok(())
     }
@@ -145,7 +169,7 @@ fn main() -> io::Result<()> {
         None => current_dir().unwrap_or(PathBuf::from("."))
     };
     
-    let path_widget: PathField = PathField {path: current_path.clone(), path_str: current_path.to_str().unwrap_or(".").to_owned()};
+    let path_widget: PathField = PathField {path: current_path.clone(), path_str: current_path.to_str().unwrap_or(".").to_owned(), is_focused: true};
 
     let mut terminal = ratatui::init();
 
@@ -153,8 +177,9 @@ fn main() -> io::Result<()> {
         exit: false,
         quick_access: QuickAccess {},
         path_field: path_widget,
-        command: Command { input: String::new() },
+        command: Command { input: String::new(), is_focused: false },
         explorer: Explorer { files: Vec::new() },
+        focused_widget: CurrentWidget::PathField,
     };
 
     let app_result = app.run(&mut terminal);
@@ -162,10 +187,4 @@ fn main() -> io::Result<()> {
     ratatui::restore();
 
     app_result
-}
-
-fn render_widget(frame: &mut Frame, widget: impl Widget, area: Rect) {
-    let cont_block = Block::bordered().border_type(BorderType::Rounded);
-    frame.render_widget(&cont_block, area);
-    frame.render_widget(widget, cont_block.inner(area));
 }
