@@ -6,7 +6,11 @@ edition = "2024"
 [dependencies]
 clap = { version = "4.5.54", features = ["derive"] }
 crossterm = "0.29.0"
+itertools = "0.14.0"
 rat-salsa = "4.0.1"
 ratatui = "0.30.0"
 strum = "0.27.2"
 strum_macros = "0.27.2"
+hf = "0.5.1"
+is_executable = "1.0.5"
+chrono = "0.4.41"

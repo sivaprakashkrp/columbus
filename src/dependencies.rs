@@ -9,7 +9,7 @@ pub trait FocusableWidget {
 pub fn render_widget(frame: &mut Frame, widget: impl Widget + FocusableWidget, area: Rect) {
     let mut cont_block = Block::bordered().border_type(BorderType::Rounded);
     if widget.on_focus() {
-        cont_block = cont_block.border_style(Color::Yellow);
+        cont_block = cont_block.border_style(Color::Cyan);
     }
     frame.render_widget(&cont_block, area);
     frame.render_widget(widget, cont_block.inner(area));
@@ -25,5 +25,6 @@ pub fn focus_toggler(app: &mut App) {
             app.path_field.is_focused = !app.path_field.is_focused;
         },
         CurrentWidget::QuickAccess => {},
+        CurrentWidget::Drives => {},    
     }
 }

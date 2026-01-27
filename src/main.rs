@@ -1,18 +1,16 @@
 use std::{env::current_dir, io, path::PathBuf};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Direction, Layout}, style::Stylize, widgets::{Block, BorderType, Paragraph}};
+use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Direction, Layout}, style::Stylize, widgets::{Block, BorderType, Paragraph, ScrollbarState, TableState}};
 use clap::{Parser};
 use strum::{EnumIter, IntoEnumIterator};
 
 mod path_field;
 mod command;
 mod dependencies;
-use crate::{command::Command, dependencies::{focus_toggler, render_widget}, path_field::PathField};
-
-enum EntryType {
-    File,
-    Dir,
-}
+mod explorer;
+mod file_size_deps;
+mod file_deps;
+use crate::{command::Command, dependencies::{focus_toggler, render_widget}, explorer::Explorer, path_field::PathField};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
 pub enum CurrentWidget {
@@ -20,6 +18,7 @@ pub enum CurrentWidget {
     CommandBar,
     Explorer,
     QuickAccess,
+    Drives,
 }
 
 impl CurrentWidget {
@@ -29,14 +28,6 @@ impl CurrentWidget {
         let next_index = (current_index + 1) % variants.len();
         variants[next_index]
     }
-}
-
-struct FileEntry {
-    e_type: EntryType,
-    name: String,
-    size: String,
-    modified_at: String,
-    hidden: bool,
 }
 
 pub struct App {
@@ -52,10 +43,6 @@ struct QuickAccess {
 
 }
 
-struct Explorer {
-    files: Vec<FileEntry>,
-}
-
 #[derive(Debug, Parser)]
 #[command(
     version,
@@ -64,10 +51,11 @@ struct Explorer {
     long_about = "<Long About Comes here>",
     help_template = "{bin} {version}\nDeveloped By: {author}\n\n{about}\n\nUsage:\n\t{usage}\n\n{all-args}",
     author = "Sivaprakash P"
-
 )]
 struct CLI {
     path: Option<PathBuf>,
+    #[arg(short = 'a', long = "include-hidden", help = "Includes hidden files and folders")]
+    include_hidden: bool,
 }
 
 impl App {
@@ -82,7 +70,7 @@ impl App {
         Ok(())
     }
 
-    fn draw(&self, frame: &mut Frame) {
+    fn draw(&mut self, frame: &mut Frame) {
         // Creating the Layout Blocks
         let vertical_layout = Layout::vertical([Constraint::Length(3), Constraint::Percentage(90), Constraint::Length(3)]);
         let vertical_split_areas = vertical_layout.split(frame.area()); 
@@ -92,10 +80,15 @@ impl App {
             .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
             .areas(vertical_split_areas[0]);
 
-        let [sidebar, explorer_area] = Layout::default()
+        let [sidebar, explorer_cont_area] = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(20), Constraint::Percentage(80)])
             .areas(vertical_split_areas[1]);
+
+        let [explorer_area, explorer_scroll_bar] = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([Constraint::Percentage(97), Constraint::Percentage(3)])
+            .areas(explorer_cont_area);
 
         let [drive_area, quick_access_area] = Layout::default()
             .direction(Direction::Vertical)
@@ -111,16 +104,36 @@ impl App {
 
         // Rendering the instructions area
         render_widget(frame, &self.command, vertical_split_areas[2]);
+
+        self.explorer.create_explorer_table(frame, explorer_area);
+        self.explorer.render_scrollbar(frame, explorer_scroll_bar);
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
-        if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Char('q') {
-            self.exit = true;
-        } else if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Tab {
-            focus_toggler(self);
-            self.focused_widget = self.focused_widget.next();
-            focus_toggler(self);
+        // if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Char('q') {
+        //     self.exit = true;
+        // } else if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Tab {
+        //     focus_toggler(self);
+        //     self.focused_widget = self.focused_widget.next();
+        //     focus_toggler(self);
+        // }
+
+        if key_event.kind == KeyEventKind::Press {
+            match key_event.code {
+                KeyCode::Char('q') => self.exit = true,
+                KeyCode::Char('j') | KeyCode::Down => self.explorer.next_row(),
+                KeyCode::Char('k') | KeyCode::Up => self.explorer.previous_row(),
+                KeyCode::Char('l') | KeyCode::Right => self.explorer.next_column(),
+                KeyCode::Char('h') | KeyCode::Left => self.explorer.previous_column(),
+                KeyCode::Tab => {
+                    focus_toggler(self);
+                    self.focused_widget = self.focused_widget.next();
+                    focus_toggler(self);
+                },
+                _ => ()
+            }
         }
+        
         Ok(())
     }
 }
@@ -178,7 +191,7 @@ fn main() -> io::Result<()> {
         quick_access: QuickAccess {},
         path_field: path_widget,
         command: Command { input: String::new(), is_focused: false },
-        explorer: Explorer { files: Vec::new() },
+        explorer: Explorer::new(&current_path, cli.include_hidden),
         focused_widget: CurrentWidget::PathField,
     };
 
