@@ -281,6 +281,7 @@ dependencies = [
  "ratatui",
  "strum",
  "strum_macros",
+ "tui-input",
 ]
 
 [[package]]
@@ -1662,6 +1663,16 @@ checksum = "30cfb0125f12d9c277f35663a0a33f8c30190f4e4574868a330595412d34ebf3"
 dependencies = [
  "num-conv",
  "time-core",
+]
+
+[[package]]
+name = "tui-input"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "79c1ee964298f136020f5f69e0e601f4d3a1f610a7baf1af9fcb96152e8a2c45"
+dependencies = [
+ "ratatui",
+ "unicode-width",
 ]
 
 [[package]]

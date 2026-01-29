@@ -24,6 +24,7 @@ pub struct Explorer {
     pub files: Vec<FileEntry>,
     pub state: TableState,
     pub scroll_state: ScrollbarState,
+    pub on_focus: bool,
 }
 
 impl FileEntry {
@@ -43,9 +44,10 @@ impl Explorer {
                 files: data_vec.clone(),
                 state: TableState::default().with_selected(0),
                 scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
+                on_focus: false,
             };
         } else {
-            return Explorer { files: vec![], state: TableState::default().with_selected(0), scroll_state: ScrollbarState::new(ITEM_HEIGHT)}
+            return Explorer { files: vec![], state: TableState::default().with_selected(0), scroll_state: ScrollbarState::new(ITEM_HEIGHT), on_focus: false,}
         }
     }
 

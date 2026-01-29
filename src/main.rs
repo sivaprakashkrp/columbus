@@ -10,7 +10,7 @@ mod dependencies;
 mod explorer;
 mod file_size_deps;
 mod file_deps;
-use crate::{command::Command, dependencies::{focus_toggler, render_widget}, explorer::Explorer, path_field::PathField};
+use crate::{command::Command, dependencies::{focus_toggler, render_widget}, explorer::Explorer, path_field::{PathField, PathFieldFS}};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
 pub enum CurrentWidget {
@@ -33,7 +33,7 @@ impl CurrentWidget {
 pub struct App {
     exit: bool,
     quick_access: QuickAccess,
-    path_field: PathField,
+    path_field: PathFieldFS,
     command: Command,
     explorer: Explorer,
     focused_widget: CurrentWidget,
@@ -61,11 +61,11 @@ struct CLI {
 impl App {
     fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
         while !self.exit {
+            terminal.draw(|frame| self.draw(frame))?;
             match crossterm::event::read()? {
                 crossterm::event::Event::Key(key_event) => self.handle_key_event(key_event)?,
                 _ => {}
             }
-            terminal.draw(|frame| self.draw(frame))?;
         }
         Ok(())
     }
@@ -100,7 +100,8 @@ impl App {
         frame.render_widget(Paragraph::new("COLUMBUS").centered().block(Block::bordered().border_type(BorderType::Rounded)).bold().cyan(), title);
 
         // Rendering the PathField Widget
-        render_widget(frame, &self.path_field, path_bar);
+        // render_widget(frame, &self.path_field, path_bar);
+        self.path_field.render_input(frame, path_bar);
 
         // Rendering the instructions area
         render_widget(frame, &self.command, vertical_split_areas[2]);
@@ -125,6 +126,8 @@ impl App {
                 KeyCode::Char('k') | KeyCode::Up => self.explorer.previous_row(),
                 KeyCode::Char('l') | KeyCode::Right => self.explorer.next_column(),
                 KeyCode::Char('h') | KeyCode::Left => self.explorer.previous_column(),
+                KeyCode::Char('e') => self.path_field.start_editing(),
+                KeyCode::Esc => self.path_field.stop_editing(),
                 KeyCode::Tab => {
                     focus_toggler(self);
                     self.focused_widget = self.focused_widget.next();
@@ -182,14 +185,14 @@ fn main() -> io::Result<()> {
         None => current_dir().unwrap_or(PathBuf::from("."))
     };
     
-    let path_widget: PathField = PathField {path: current_path.clone(), path_str: current_path.to_str().unwrap_or(".").to_owned(), is_focused: true};
+    // let path_widget: PathField = PathField {path: current_path.clone(), path_str: current_path.to_str().unwrap_or(".").to_owned(), is_focused: true};
 
     let mut terminal = ratatui::init();
 
     let mut app: App = App {
         exit: false,
         quick_access: QuickAccess {},
-        path_field: path_widget,
+        path_field: PathFieldFS::new(&current_path),
         command: Command { input: String::new(), is_focused: false },
         explorer: Explorer::new(&current_path, cli.include_hidden),
         focused_widget: CurrentWidget::PathField,

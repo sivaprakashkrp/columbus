@@ -22,7 +22,8 @@ pub fn focus_toggler(app: &mut App) {
         },
         CurrentWidget::Explorer => {},
         CurrentWidget::PathField => {
-            app.path_field.is_focused = !app.path_field.is_focused;
+            // app.path_field.is_focused = !app.path_field.is_focused;
+            // app.path_field.run();
         },
         CurrentWidget::QuickAccess => {},
         CurrentWidget::Drives => {},    
