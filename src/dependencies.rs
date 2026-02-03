@@ -17,14 +17,9 @@ pub fn render_widget(frame: &mut Frame, widget: impl Widget + FocusableWidget, a
 
 pub fn focus_toggler(app: &mut App) {
     match app.focused_widget {
-        CurrentWidget::CommandBar => {
-            app.command.is_focused = !app.command.is_focused;
-        },
+        CurrentWidget::CommandBar => {},
         CurrentWidget::Explorer => {},
-        CurrentWidget::PathField => {
-            // app.path_field.is_focused = !app.path_field.is_focused;
-            // app.path_field.run();
-        },
+        CurrentWidget::PathField => {},
         CurrentWidget::QuickAccess => {},
         CurrentWidget::Drives => {},    
     }

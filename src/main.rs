@@ -1,6 +1,6 @@
 use std::{env::current_dir, io, path::PathBuf};
 use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Direction, Layout}, style::Stylize, widgets::{Block, BorderType, Paragraph, ScrollbarState, TableState}};
+use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Direction, Layout}, style::Stylize, widgets::{Block, BorderType, Paragraph}};
 use clap::{Parser};
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -10,7 +10,8 @@ mod dependencies;
 mod explorer;
 mod file_size_deps;
 mod file_deps;
-use crate::{command::Command, dependencies::{focus_toggler, render_widget}, explorer::Explorer, path_field::{PathField, PathFieldFS}};
+mod drives_deps;
+use crate::{command::Command, dependencies::{focus_toggler}, drives_deps::Drives, explorer::Explorer, path_field::{PathField}};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
 pub enum CurrentWidget {
@@ -33,9 +34,10 @@ impl CurrentWidget {
 pub struct App {
     exit: bool,
     quick_access: QuickAccess,
-    path_field: PathFieldFS,
+    path_field: PathField,
     command: Command,
     explorer: Explorer,
+    drives: Drives,
     focused_widget: CurrentWidget,
 }
 
@@ -47,7 +49,7 @@ struct QuickAccess {
 #[command(
     version,
     author,
-    about = "A TUI File explorer",
+    about = "A TUI File Explorer",
     long_about = "<Long About Comes here>",
     help_template = "{bin} {version}\nDeveloped By: {author}\n\n{about}\n\nUsage:\n\t{usage}\n\n{all-args}",
     author = "Sivaprakash P"
@@ -103,11 +105,16 @@ impl App {
         // render_widget(frame, &self.path_field, path_bar);
         self.path_field.render_input(frame, path_bar);
 
-        // Rendering the instructions area
-        render_widget(frame, &self.command, vertical_split_areas[2]);
+        // Rendering the Command area
+        // render_widget(frame, &self.command, vertical_split_areas[2]);
+        self.command.render_input(frame, vertical_split_areas[2]);
 
+        // Rendering the explorer area
         self.explorer.create_explorer_table(frame, explorer_area);
         self.explorer.render_scrollbar(frame, explorer_scroll_bar);
+
+        // Rendering the drives area
+        self.drives.create_drives_table(frame, drive_area);
     }
 
     fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
@@ -184,17 +191,16 @@ fn main() -> io::Result<()> {
         Some(res) => res,
         None => current_dir().unwrap_or(PathBuf::from("."))
     };
-    
-    // let path_widget: PathField = PathField {path: current_path.clone(), path_str: current_path.to_str().unwrap_or(".").to_owned(), is_focused: true};
 
     let mut terminal = ratatui::init();
 
     let mut app: App = App {
         exit: false,
         quick_access: QuickAccess {},
-        path_field: PathFieldFS::new(&current_path),
-        command: Command { input: String::new(), is_focused: false },
+        path_field: PathField::new(&current_path),
+        command: Command::new(),
         explorer: Explorer::new(&current_path, cli.include_hidden),
+        drives: Drives::new(),
         focused_widget: CurrentWidget::PathField,
     };
 
