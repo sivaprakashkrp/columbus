@@ -1,17 +1,28 @@
-use std::{env::current_dir, io, path::PathBuf};
-use crossterm::event::{KeyCode, KeyEvent, KeyEventKind};
-use ratatui::{DefaultTerminal, Frame, layout::{Constraint, Direction, Layout}, style::Stylize, widgets::{Block, BorderType, Paragraph}};
-use clap::{Parser};
+use clap::Parser;
+use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
+use ratatui::{
+    DefaultTerminal, Frame,
+    layout::{Constraint, Direction, Layout},
+    style::Stylize,
+    widgets::{Block, BorderType, Paragraph},
+};
+use std::{env::current_dir, io, path::PathBuf, sync::mpsc, thread};
 use strum::{EnumIter, IntoEnumIterator};
 
-mod path_field;
 mod command;
 mod dependencies;
-mod explorer;
-mod file_size_deps;
-mod file_deps;
 mod drives_deps;
-use crate::{command::Command, dependencies::{focus_toggler}, drives_deps::Drives, explorer::Explorer, path_field::{PathField}};
+mod explorer;
+mod file_deps;
+mod file_size_deps;
+mod path_field;
+use crate::{
+    command::Command,
+    dependencies::{HandlesInput},
+    drives_deps::Drives,
+    explorer::Explorer,
+    path_field::PathField,
+};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
 pub enum CurrentWidget {
@@ -38,12 +49,10 @@ pub struct App {
     command: Command,
     explorer: Explorer,
     drives: Drives,
-    focused_widget: CurrentWidget,
+    focus_on: CurrentWidget,
 }
 
-struct QuickAccess {
-
-}
+struct QuickAccess {}
 
 #[derive(Debug, Parser)]
 #[command(
@@ -56,26 +65,45 @@ struct QuickAccess {
 )]
 struct CLI {
     path: Option<PathBuf>,
-    #[arg(short = 'a', long = "include-hidden", help = "Includes hidden files and folders")]
+    #[arg(
+        short = 'a',
+        long = "include-hidden",
+        help = "Includes hidden files and folders"
+    )]
     include_hidden: bool,
 }
 
 impl App {
-    fn run(&mut self, terminal: &mut DefaultTerminal) -> io::Result<()> {
+    fn run(&mut self, terminal: &mut DefaultTerminal, rx: mpsc::Receiver<Event>) -> io::Result<()> {
         while !self.exit {
-            terminal.draw(|frame| self.draw(frame))?;
-            match crossterm::event::read()? {
-                crossterm::event::Event::Key(key_event) => self.handle_key_event(key_event)?,
-                _ => {}
+            if let Ok(rec_event) = rx.recv() {
+                match rec_event {
+                    Event::Key(key_event) => {
+                        if key_event.kind == KeyEventKind::Press {
+                            match key_event.code {
+                                KeyCode::Char('q') => self.exit = true,
+                                _ => self.get_focused_widget().handle_input(rec_event),
+                            }
+                        } else {
+                            self.get_focused_widget().handle_input(rec_event);
+                        }
+                    }
+                    _ => self.get_focused_widget().handle_input(rec_event),
+                }
             }
+            terminal.draw(|frame| self.draw(frame))?;
         }
         Ok(())
     }
 
     fn draw(&mut self, frame: &mut Frame) {
         // Creating the Layout Blocks
-        let vertical_layout = Layout::vertical([Constraint::Length(3), Constraint::Percentage(90), Constraint::Length(3)]);
-        let vertical_split_areas = vertical_layout.split(frame.area()); 
+        let vertical_layout = Layout::vertical([
+            Constraint::Length(3),
+            Constraint::Percentage(90),
+            Constraint::Length(3),
+        ]);
+        let vertical_split_areas = vertical_layout.split(frame.area());
 
         let [title, path_bar] = Layout::default()
             .direction(Direction::Horizontal)
@@ -97,9 +125,15 @@ impl App {
             .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
             .areas(sidebar);
 
-
         // Rendering the Title
-        frame.render_widget(Paragraph::new("COLUMBUS").centered().block(Block::bordered().border_type(BorderType::Rounded)).bold().cyan(), title);
+        frame.render_widget(
+            Paragraph::new("COLUMBUS")
+                .centered()
+                .block(Block::bordered().border_type(BorderType::Rounded))
+                .bold()
+                .cyan(),
+            title,
+        );
 
         // Rendering the PathField Widget
         // render_widget(frame, &self.path_field, path_bar);
@@ -117,40 +151,44 @@ impl App {
         self.drives.create_drives_table(frame, drive_area);
     }
 
-    fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
-        // if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Char('q') {
-        //     self.exit = true;
-        // } else if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Tab {
-        //     focus_toggler(self);
-        //     self.focused_widget = self.focused_widget.next();
-        //     focus_toggler(self);
-        // }
+    // fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
+    //     // if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Char('q') {
+    //     //     self.exit = true;
+    //     // } else if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Tab {
+    //     //     focus_toggler(self);
+    //     //     self.focused_widget = self.focused_widget.next();
+    //     //     focus_toggler(self);
+    //     // }
 
-        if key_event.kind == KeyEventKind::Press {
-            match key_event.code {
-                KeyCode::Char('q') => self.exit = true,
-                KeyCode::Char('j') | KeyCode::Down => self.explorer.next_row(),
-                KeyCode::Char('k') | KeyCode::Up => self.explorer.previous_row(),
-                KeyCode::Char('l') | KeyCode::Right => self.explorer.next_column(),
-                KeyCode::Char('h') | KeyCode::Left => self.explorer.previous_column(),
-                KeyCode::Char('e') => self.path_field.start_editing(),
-                KeyCode::Esc => self.path_field.stop_editing(),
-                KeyCode::Tab => {
-                    focus_toggler(self);
-                    self.focused_widget = self.focused_widget.next();
-                    focus_toggler(self);
-                },
-                _ => ()
-            }
-        }
-        
-        Ok(())
+    //     if key_event.kind == KeyEventKind::Press {
+    //         match key_event.code {
+    //             KeyCode::Char('q') => self.exit = true,
+    //             KeyCode::Char('j') | KeyCode::Down => self.explorer.next_row(),
+    //             KeyCode::Char('k') | KeyCode::Up => self.explorer.previous_row(),
+    //             KeyCode::Char('l') | KeyCode::Right => self.explorer.next_column(),
+    //             KeyCode::Char('h') | KeyCode::Left => self.explorer.previous_column(),
+    //             KeyCode::Char('e') => self.path_field.start_editing(),
+    //             KeyCode::Esc => self.path_field.stop_editing(),
+    //             // KeyCode::Tab => {
+    //             //     focus_toggler(self);
+    //             //     self.focused_widget = self.focused_widget.next();
+    //             //     focus_toggler(self);
+    //             // },
+    //             _ => ()
+    //         }
+    //     }
+
+    //     Ok(())
+    // }
+
+    fn get_focused_widget(&mut self) -> impl HandlesInput {
+        self.path_field.clone()
     }
 }
 
 // impl Widget for &App {
 //     fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) where Self: Sized {
-//         
+//
 
 //         // Rendering the Title
 //         Paragraph::new("COLUMBUS").centered().block(Block::bordered().border_type(BorderType::Rounded)).bold().cyan().render(title, buf);
@@ -179,17 +217,16 @@ impl App {
 //             " Quit ".into(),
 //         ]).centered();
 //         Paragraph::new("Command: ").block(Block::bordered().border_type(BorderType::Rounded).title_bottom(instructions)).render(command_area, buf);
-        
-        
+
 //     }
 // }
 
 fn main() -> io::Result<()> {
     let cli = CLI::parse();
-    
+
     let current_path = match cli.path {
         Some(res) => res,
-        None => current_dir().unwrap_or(PathBuf::from("."))
+        None => current_dir().unwrap_or(PathBuf::from(".")),
     };
 
     let mut terminal = ratatui::init();
@@ -201,12 +238,26 @@ fn main() -> io::Result<()> {
         command: Command::new(),
         explorer: Explorer::new(&current_path, cli.include_hidden),
         drives: Drives::new(),
-        focused_widget: CurrentWidget::PathField,
+        focus_on: CurrentWidget::PathField,
     };
 
-    let app_result = app.run(&mut terminal);
+    // Spawning a input thread
+    let (tx, rx) = mpsc::channel::<Event>();
+    thread::spawn(move || handle_input_events(tx.clone()));
+
+    let app_result = app.run(&mut terminal, rx);
 
     ratatui::restore();
 
     app_result
+}
+
+fn handle_input_events(tx: mpsc::Sender<Event>) {
+    loop {
+        if let Ok(rec_event) = crossterm::event::read() {
+            if let Ok(suc) = tx.send(rec_event) {
+                // Success of transmission
+            }
+        }
+    }
 }

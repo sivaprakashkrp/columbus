@@ -1,9 +1,16 @@
-use std::{path::PathBuf};
-use crossterm::event::{self, Event, KeyCode};
-use ratatui::{Frame, layout::Rect, style::{Color, Style}, widgets::{Block, Paragraph}};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use ratatui::{
+    Frame,
+    layout::Rect,
+    style::{Color, Style},
+    widgets::{Block, Paragraph},
+};
+use std::path::PathBuf;
 use tui_input::{Input, backend::crossterm::EventHandler};
 
-#[derive(Debug, Default)]
+use crate::dependencies::HandlesInput;
+
+#[derive(Debug, Default, Clone)]
 pub struct PathField {
     /// Current value of the input box
     input: Input,
@@ -36,7 +43,7 @@ impl PathField {
                         KeyCode::Esc => {
                             self.stop_editing();
                             break;
-                        },
+                        }
                         _ => {
                             self.input.handle_event(&event);
                         }
@@ -61,7 +68,11 @@ impl PathField {
         let input = Paragraph::new(self.input.value())
             .style(style)
             .scroll((0, scroll as u16))
-            .block(Block::bordered().border_type(ratatui::widgets::BorderType::Rounded).title(" Path "));
+            .block(
+                Block::bordered()
+                    .border_type(ratatui::widgets::BorderType::Rounded)
+                    .title(" Path "),
+            );
         frame.render_widget(input, area);
 
         if self.input_mode == InputMode::Editing {
@@ -69,6 +80,27 @@ impl PathField {
             // end of the input text and one line down from the border to the input line
             let x = self.input.visual_cursor().max(scroll) - scroll + 1;
             frame.set_cursor_position((area.x + x as u16, area.y + 1))
+        }
+    }
+}
+
+impl HandlesInput for PathField {
+    fn handle_input(&mut self, event: Event) {
+        match event {
+            Event::Key(key_event) => {
+                if key_event.kind == KeyEventKind::Press {
+                    if self.input_mode == InputMode::Normal {
+                        match key_event.code {
+                            KeyCode::Char('a') => self.input_mode = InputMode::Editing,
+                            KeyCode::Esc => self.input_mode = InputMode::Normal,
+                            _ => {}
+                        }
+                    } else {
+                        self.input.handle_event(&event);
+                    }
+                }
+            },
+            _ => {},
         }
     }
 }

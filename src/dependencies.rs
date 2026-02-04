@@ -16,11 +16,15 @@ pub fn render_widget(frame: &mut Frame, widget: impl Widget + FocusableWidget, a
 }
 
 pub fn focus_toggler(app: &mut App) {
-    match app.focused_widget {
+    match app.focus_on {
         CurrentWidget::CommandBar => {},
         CurrentWidget::Explorer => {},
         CurrentWidget::PathField => {},
         CurrentWidget::QuickAccess => {},
         CurrentWidget::Drives => {},    
     }
+}
+
+pub trait HandlesInput {
+    fn handle_input(&mut self, event: crossterm::event::Event);
 }
