@@ -1,19 +1,15 @@
-use crossterm::event::{self, Event, KeyCode};
+use crossterm::event::{self, Event, KeyCode, KeyEventKind};
 use ratatui::{Frame, layout::Rect, style::{Color, Style, Stylize}, text::{Line}, widgets::{Block, Paragraph}};
 use tui_input::{Input, backend::crossterm::EventHandler};
+
+use crate::dependencies::{HandlesInput, InputMode};
 
 pub struct Command {
     /// Current value of the input box
     input: Input,
     /// Current input mode
-    input_mode: InputMode,
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum InputMode {
-    #[default]
-    Normal,
-    Editing,
+    pub input_mode: InputMode,
+    pub in_focus: bool,
 }
 
 impl Command {
@@ -21,6 +17,7 @@ impl Command {
         Command {
             input: Input::new(String::from("")),
             input_mode: InputMode::Normal,
+            in_focus: false,
         }
     }
 
@@ -54,7 +51,7 @@ impl Command {
         let scroll = self.input.visual_scroll(width as usize);
         let style = match self.input_mode {
             InputMode::Normal => Style::default(),
-            InputMode::Editing => Color::Yellow.into(),
+            InputMode::Editing => Color::Cyan.into(),
         };
         let instructions = Line::from(vec![
             " <Tab>".blue().bold(),
@@ -67,7 +64,19 @@ impl Command {
         let input = Paragraph::new(self.input.value())
             .style(style)
             .scroll((0, scroll as u16))
-            .block(Block::bordered().border_type(ratatui::widgets::BorderType::Rounded).title(" Command ").title_bottom(instructions));
+            .block(
+                Block::bordered()
+                .border_type(ratatui::widgets::BorderType::Rounded)
+                .title(" Command ")
+                .title_bottom(instructions)
+                .border_style(
+                        if self.in_focus {
+                            Style::default().fg(Color::Cyan)
+                        } else {
+                            Style::default()
+                        }
+                    )
+            );
         frame.render_widget(input, area);
 
         if self.input_mode == InputMode::Editing {
@@ -75,6 +84,32 @@ impl Command {
             // end of the input text and one line down from the border to the input line
             let x = self.input.visual_cursor().max(scroll) - scroll + 1;
             frame.set_cursor_position((area.x + x as u16, area.y + 1))
+        }
+    }
+}
+
+impl HandlesInput for Command {
+    fn handle_input(&mut self, event: Event) {
+        match event {
+            Event::Key(key_event) => {
+                if key_event.kind == KeyEventKind::Press {
+                    if self.input_mode == InputMode::Normal {
+                        match key_event.code {
+                            KeyCode::Char('a') => self.input_mode = InputMode::Editing,
+                            _ => {
+                            }
+                        }
+                    } else {
+                        match key_event.code {
+                            KeyCode::Esc => self.input_mode = InputMode::Normal,
+                            _ => {
+                                self.input.handle_event(&Event::Key(key_event));
+                            }
+                        }
+                    }
+                }
+            }
+            _ => {}
         }
     }
 }

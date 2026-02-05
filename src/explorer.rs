@@ -1,8 +1,9 @@
 use std::path::PathBuf;
 
+use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{Frame, layout::{Constraint, Margin, Rect}, style::{Color, Modifier, Style, Stylize}, text::Text, widgets::{Block, Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState}};
 
-use crate::file_deps::get_data;
+use crate::{dependencies::HandlesInput, file_deps::get_data};
 
 #[derive(Debug, Clone)]
 pub struct FileEntry {
@@ -24,7 +25,7 @@ pub struct Explorer {
     pub files: Vec<FileEntry>,
     pub state: TableState,
     pub scroll_state: ScrollbarState,
-    pub on_focus: bool,
+    pub in_focus: bool,
 }
 
 impl FileEntry {
@@ -44,10 +45,10 @@ impl Explorer {
                 files: data_vec.clone(),
                 state: TableState::default().with_selected(0),
                 scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
-                on_focus: false,
+                in_focus: true,
             };
         } else {
-            return Explorer { files: vec![], state: TableState::default().with_selected(0), scroll_state: ScrollbarState::new(ITEM_HEIGHT), on_focus: false,}
+            return Explorer { files: vec![], state: TableState::default().with_selected(0), scroll_state: ScrollbarState::new(ITEM_HEIGHT), in_focus: true,}
         }
     }
 
@@ -129,7 +130,18 @@ impl Explorer {
                 Constraint::Min(20),
                 Constraint::Min(20),
             ],
-        ).block(Block::bordered().border_type(ratatui::widgets::BorderType::Rounded).title(" Explorer "))
+        ).block(
+            Block::bordered()
+            .border_type(ratatui::widgets::BorderType::Rounded)
+            .title(" Explorer ")
+            .border_style(
+                if self.in_focus {
+                    Style::default().fg(Color::Cyan)
+                } else {
+                    Style::default()
+                }
+            )
+        )
         .header(header)
         .row_highlight_style(selected_row_style)
         .column_highlight_style(selected_col_style)
@@ -156,5 +168,26 @@ impl Explorer {
             }),
             &mut self.scroll_state,
         );
+    }
+}
+
+impl HandlesInput for Explorer {
+    fn handle_input(&mut self, event: Event) {
+        match event {
+            Event::Key(key_event) => {
+                if key_event.kind == KeyEventKind::Press {
+                    if key_event.kind == KeyEventKind::Press {
+                        match key_event.code {
+                            KeyCode::Char('j') | KeyCode::Down => self.next_row(),
+                            KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
+                            KeyCode::Char('l') | KeyCode::Right => self.next_column(),
+                            KeyCode::Char('h') | KeyCode::Left => self.previous_column(),
+                            _ => ()
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
     }
 }

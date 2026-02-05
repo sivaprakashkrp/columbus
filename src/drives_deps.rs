@@ -1,17 +1,18 @@
 use std::path::PathBuf;
 
+use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
     Frame,
-    layout::{Constraint, Margin, Rect},
+    layout::{Constraint, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::Text,
     widgets::{
-        Block, Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState
+        Block, Cell, HighlightSpacing, Row, ScrollbarState, Table, TableState
     },
 };
 use sysinfo::Disks;
 
-use crate::file_size_deps::{convert, find_length};
+use crate::{dependencies::HandlesInput,};
 
 #[derive(Debug, Clone)]
 pub struct DriveEntry {
@@ -23,7 +24,7 @@ pub struct Drives {
     pub drives: Vec<DriveEntry>,
     pub state: TableState,
     pub scroll_state: ScrollbarState,
-    pub on_focus: bool,
+    pub in_focus: bool,
 }
 
 impl DriveEntry {
@@ -44,7 +45,7 @@ impl Drives {
             drives: data_vec.clone(),
             state: TableState::default().with_selected(0),
             scroll_state: ScrollbarState::new((&data_vec.len() - 1) * ITEM_HEIGHT),
-            on_focus: false,
+            in_focus: false,
         }
     }
 
@@ -122,7 +123,18 @@ impl Drives {
                 Constraint::Min(70),
                 Constraint::Min(30),
             ],
-        ).block(Block::bordered().border_type(ratatui::widgets::BorderType::Rounded).title(" Drives "))
+        ).block(
+            Block::bordered()
+            .border_type(ratatui::widgets::BorderType::Rounded)
+            .title(" Drives ")
+            .border_style(
+                if self.in_focus {
+                    Style::default().fg(Color::Cyan)
+                } else {
+                    Style::default()
+                }
+            )
+        )
         .header(header)
         .row_highlight_style(selected_row_style)
         .column_highlight_style(selected_col_style)
@@ -131,20 +143,6 @@ impl Drives {
         .bg(Color::Black)
         .highlight_spacing(HighlightSpacing::Always);
         frame.render_stateful_widget(t, area, &mut self.state);
-    }
-
-    pub fn render_scrollbar(&mut self, frame: &mut Frame, area: Rect) {
-        frame.render_stateful_widget(
-            Scrollbar::default()
-                .orientation(ScrollbarOrientation::VerticalRight)
-                .begin_symbol(None)
-                .end_symbol(None),
-            area.inner(Margin {
-                vertical: 1,
-                horizontal: 1,
-            }),
-            &mut self.scroll_state,
-        );
     }
 }
 
@@ -158,4 +156,25 @@ fn get_drives() -> Vec<DriveEntry> {
         });
     }
     res
+}
+
+impl HandlesInput for Drives {
+    fn handle_input(&mut self, event: Event) {
+        match event {
+            Event::Key(key_event) => {
+                if key_event.kind == KeyEventKind::Press {
+                    if key_event.kind == KeyEventKind::Press {
+                        match key_event.code {
+                            KeyCode::Char('j') | KeyCode::Down => self.next_row(),
+                            KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
+                            KeyCode::Char('l') | KeyCode::Right => self.next_column(),
+                            KeyCode::Char('h') | KeyCode::Left => self.previous_column(),
+                            _ => ()
+                        }
+                    }
+                }
+            }
+            _ => {}
+        }
+    }
 }

@@ -8,21 +8,15 @@ use ratatui::{
 use std::path::PathBuf;
 use tui_input::{Input, backend::crossterm::EventHandler};
 
-use crate::dependencies::HandlesInput;
+use crate::dependencies::{HandlesInput, InputMode};
 
 #[derive(Debug, Default, Clone)]
 pub struct PathField {
     /// Current value of the input box
     input: Input,
     /// Current input mode
-    input_mode: InputMode,
-}
-
-#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
-pub enum InputMode {
-    #[default]
-    Normal,
-    Editing,
+    pub input_mode: InputMode,
+    pub in_focus: bool,
 }
 
 impl PathField {
@@ -30,6 +24,7 @@ impl PathField {
         PathField {
             input: Input::new(String::from(path.to_string_lossy())),
             input_mode: InputMode::Normal,
+            in_focus: false,
         }
     }
 
@@ -63,7 +58,7 @@ impl PathField {
         let scroll = self.input.visual_scroll(width as usize);
         let style = match self.input_mode {
             InputMode::Normal => Style::default(),
-            InputMode::Editing => Color::Yellow.into(),
+            InputMode::Editing => Color::Cyan.into(),
         };
         let input = Paragraph::new(self.input.value())
             .style(style)
@@ -71,8 +66,16 @@ impl PathField {
             .block(
                 Block::bordered()
                     .border_type(ratatui::widgets::BorderType::Rounded)
-                    .title(" Path "),
+                    .title(" Path ")
+                    .border_style(
+                        if self.in_focus {
+                            Style::default().fg(Color::Cyan)
+                        } else {
+                            Style::default()
+                        }
+                    )
             );
+        
         frame.render_widget(input, area);
 
         if self.input_mode == InputMode::Editing {
@@ -92,15 +95,19 @@ impl HandlesInput for PathField {
                     if self.input_mode == InputMode::Normal {
                         match key_event.code {
                             KeyCode::Char('a') => self.input_mode = InputMode::Editing,
-                            KeyCode::Esc => self.input_mode = InputMode::Normal,
                             _ => {}
                         }
                     } else {
-                        self.input.handle_event(&event);
+                        match key_event.code {
+                            KeyCode::Esc => self.input_mode = InputMode::Normal,
+                            _ => {
+                                self.input.handle_event(&Event::Key(key_event));
+                            }
+                        }
                     }
                 }
-            },
-            _ => {},
+            }
+            _ => {}
         }
     }
 }

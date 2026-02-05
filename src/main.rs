@@ -1,5 +1,5 @@
 use clap::Parser;
-use crossterm::event::{Event, KeyCode, KeyEvent, KeyEventKind};
+use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
     DefaultTerminal, Frame,
     layout::{Constraint, Direction, Layout},
@@ -18,7 +18,7 @@ mod file_size_deps;
 mod path_field;
 use crate::{
     command::Command,
-    dependencies::{HandlesInput},
+    dependencies::{HandlesInput, InputMode, focus_toggler},
     drives_deps::Drives,
     explorer::Explorer,
     path_field::PathField,
@@ -26,11 +26,11 @@ use crate::{
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
 pub enum CurrentWidget {
-    PathField,
-    CommandBar,
     Explorer,
-    QuickAccess,
+    PathField,
     Drives,
+    QuickAccess,
+    CommandBar,
 }
 
 impl CurrentWidget {
@@ -81,7 +81,22 @@ impl App {
                     Event::Key(key_event) => {
                         if key_event.kind == KeyEventKind::Press {
                             match key_event.code {
-                                KeyCode::Char('q') => self.exit = true,
+                                KeyCode::Tab => {
+                                    focus_toggler(self);
+                                    self.focus_on = self.focus_on.next();
+                                    focus_toggler(self);
+                                },
+                                KeyCode::Char('q') => {
+                                    if self.focus_on == CurrentWidget::CommandBar || self.focus_on == CurrentWidget::PathField {
+                                        if self.command.input_mode == InputMode::Editing || self.path_field.input_mode == InputMode::Editing {
+                                            self.get_focused_widget().handle_input(rec_event);
+                                        } else {
+                                            self.exit = true
+                                        }
+                                    } else {
+                                        self.exit = true;
+                                    }
+                                },
                                 _ => self.get_focused_widget().handle_input(rec_event),
                             }
                         } else {
@@ -151,38 +166,19 @@ impl App {
         self.drives.create_drives_table(frame, drive_area);
     }
 
-    // fn handle_key_event(&mut self, key_event: KeyEvent) -> io::Result<()> {
-    //     // if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Char('q') {
-    //     //     self.exit = true;
-    //     // } else if key_event.kind == KeyEventKind::Press && key_event.code == KeyCode::Tab {
-    //     //     focus_toggler(self);
-    //     //     self.focused_widget = self.focused_widget.next();
-    //     //     focus_toggler(self);
-    //     // }
-
-    //     if key_event.kind == KeyEventKind::Press {
-    //         match key_event.code {
-    //             KeyCode::Char('q') => self.exit = true,
-    //             KeyCode::Char('j') | KeyCode::Down => self.explorer.next_row(),
-    //             KeyCode::Char('k') | KeyCode::Up => self.explorer.previous_row(),
-    //             KeyCode::Char('l') | KeyCode::Right => self.explorer.next_column(),
-    //             KeyCode::Char('h') | KeyCode::Left => self.explorer.previous_column(),
-    //             KeyCode::Char('e') => self.path_field.start_editing(),
-    //             KeyCode::Esc => self.path_field.stop_editing(),
-    //             // KeyCode::Tab => {
-    //             //     focus_toggler(self);
-    //             //     self.focused_widget = self.focused_widget.next();
-    //             //     focus_toggler(self);
-    //             // },
-    //             _ => ()
-    //         }
-    //     }
-
-    //     Ok(())
-    // }
-
-    fn get_focused_widget(&mut self) -> impl HandlesInput {
-        self.path_field.clone()
+    fn get_focused_widget(&mut self) -> &mut dyn HandlesInput {
+        if self.focus_on == CurrentWidget::CommandBar {
+            return &mut self.command;
+        } else if self.focus_on == CurrentWidget::Drives {
+            return &mut self.drives;
+        } else if self.focus_on == CurrentWidget::PathField {
+            return &mut self.path_field;
+        } else if self.focus_on == CurrentWidget::Explorer {
+            // return &mut self.explorer;
+        } else {
+            // return &mut self.quick_access;
+        }
+        return &mut self.explorer;
     }
 }
 
@@ -238,7 +234,7 @@ fn main() -> io::Result<()> {
         command: Command::new(),
         explorer: Explorer::new(&current_path, cli.include_hidden),
         drives: Drives::new(),
-        focus_on: CurrentWidget::PathField,
+        focus_on: CurrentWidget::Explorer,
     };
 
     // Spawning a input thread
