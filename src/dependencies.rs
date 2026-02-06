@@ -37,9 +37,15 @@ pub fn focus_toggler(app: &mut App) {
                 app.path_field.input_mode = InputMode::Normal;
             }
         },
-        CurrentWidget::QuickAccess => {}, // app.quick_access.in_focus = !app.quick_access.in_focus,
+        CurrentWidget::QuickAccess => app.quick_access.in_focus = !app.quick_access.in_focus,
         CurrentWidget::Drives => app.drives.in_focus = !app.drives.in_focus,
     }
+}
+
+pub fn focus_to(app: &mut App, widg: CurrentWidget) {
+    focus_toggler(app);
+    app.focus_on = widg;
+    focus_toggler(app);
 }
 
 pub trait HandlesInput {

@@ -10,39 +10,37 @@ use ratatui::{
         Block, Cell, HighlightSpacing, Row, ScrollbarState, Table, TableState
     },
 };
-use sysinfo::Disks;
 
-use crate::{dependencies::HandlesInput,};
+use crate::{dependencies::HandlesInput};
 
 #[derive(Debug, Clone)]
-pub struct DriveEntry {
+pub struct QAFileEntry {
     pub name: String,
-    pub mount_point: PathBuf,
+    pub path: PathBuf,
 }
 
-pub struct Drives {
-    pub drives: Vec<DriveEntry>,
+pub struct QuickAccess {
+    pub entries: Vec<QAFileEntry>,
     pub state: TableState,
     pub scroll_state: ScrollbarState,
     pub in_focus: bool,
 }
 
-impl DriveEntry {
-    fn ref_array(&self) -> [String; 2] {
+impl QAFileEntry {
+    fn ref_array(&self) -> [String; 1] {
         [
             self.name.clone(),
-            String::from(self.mount_point.to_string_lossy()),
         ]
     }
 }
 
 const ITEM_HEIGHT: usize = 1;
-impl Drives {
-    pub fn new() -> Drives {
+impl QuickAccess {
+    pub fn new() -> QuickAccess {
         const ITEM_HEIGHT: usize = 1;
-        let data_vec = get_drives();
-        Drives {
-            drives: data_vec.clone(),
+        let data_vec = get_files();
+        QuickAccess {
+            entries: data_vec.clone(),
             state: TableState::default().with_selected(0),
             scroll_state: ScrollbarState::new((&data_vec.len() - 1) * ITEM_HEIGHT),
             in_focus: false,
@@ -52,7 +50,7 @@ impl Drives {
     pub fn next_row(&mut self) {
         let i = match self.state.selected() {
             Some(i) => {
-                if i >= self.drives.len() - 1 {
+                if i >= self.entries.len() - 1 {
                     0
                 } else {
                     i + 1
@@ -68,7 +66,7 @@ impl Drives {
         let i = match self.state.selected() {
             Some(i) => {
                 if i == 0 {
-                    self.drives.len() - 1
+                    self.entries.len() - 1
                 } else {
                     i - 1
                 }
@@ -79,15 +77,7 @@ impl Drives {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
-    pub fn next_column(&mut self) {
-        self.state.select_next_column();
-    }
-
-    pub fn previous_column(&mut self) {
-        self.state.select_previous_column();
-    }
-
-    pub fn create_drives_table(&mut self, frame: &mut Frame, area: Rect) {
+    pub fn create_qa_entries_table(&mut self, frame: &mut Frame, area: Rect) {
         let header_style = Style::default().fg(Color::Black).bg(Color::Blue);
         let selected_row_style = Style::default()
             .add_modifier(Modifier::REVERSED)
@@ -97,13 +87,13 @@ impl Drives {
             .add_modifier(Modifier::REVERSED)
             .fg(Color::Blue);
 
-        let header = ["Drive", "Mount"]
+        let header = ["File Name"]
             .into_iter()
             .map(Cell::from)
             .collect::<Row>()
             .style(header_style)
             .height(1);
-        let rows = self.drives.iter().enumerate().map(|(i, data)| {
+        let rows = self.entries.iter().enumerate().map(|(i, data)| {
             let color = match i % 2 {
                 0 => Color::from_u32(0x00001122),
                 _ => Color::from_u32(0x00112233),
@@ -115,18 +105,17 @@ impl Drives {
                 .style(Style::new().fg(Color::Cyan).bg(color))
                 .height(1)
         });
-        let bar = " █ ";
+        let bar = " ▶ ";
         let t = Table::new(
             rows,
             [
                 // + 1 is for padding.
-                Constraint::Min(70),
-                Constraint::Min(30),
+                Constraint::Min(100),
             ],
         ).block(
             Block::bordered()
             .border_type(ratatui::widgets::BorderType::Rounded)
-            .title(" Drives ")
+            .title(" Quick Access ")
             .border_style(
                 if self.in_focus {
                     Style::default().fg(Color::Cyan)
@@ -139,26 +128,21 @@ impl Drives {
         .row_highlight_style(selected_row_style)
         .column_highlight_style(selected_col_style)
         .cell_highlight_style(selected_cell_style)
-        .highlight_symbol(Text::from(vec!["".into(), bar.into(), "".into()]))
+        .highlight_symbol(Text::from(vec![bar.into(),]))
         .bg(Color::Black)
         .highlight_spacing(HighlightSpacing::Always);
         frame.render_stateful_widget(t, area, &mut self.state);
     }
+
 }
 
-fn get_drives() -> Vec<DriveEntry> {
-    let disks = Disks::new_with_refreshed_list();
-    let mut res: Vec<DriveEntry> = vec![];
-    for disk in &disks {
-        res.push(DriveEntry {
-            name: disk.name().to_string_lossy().to_string(),
-            mount_point: PathBuf::from(disk.mount_point()),
-        });
-    }
-    res
+pub fn get_files() -> Vec<QAFileEntry> {
+    vec![
+        QAFileEntry { name: String::from("Hello there"), path: PathBuf::from(".")}
+    ]
 }
 
-impl HandlesInput for Drives {
+impl HandlesInput for QuickAccess {
     fn handle_input(&mut self, event: Event) {
         match event {
             Event::Key(key_event) => {
@@ -167,8 +151,6 @@ impl HandlesInput for Drives {
                         match key_event.code {
                             KeyCode::Char('j') | KeyCode::Down => self.next_row(),
                             KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
-                            KeyCode::Char('l') | KeyCode::Right => self.next_column(),
-                            KeyCode::Char('h') | KeyCode::Left => self.previous_column(),
                             _ => ()
                         }
                     }

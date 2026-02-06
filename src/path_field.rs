@@ -6,14 +6,14 @@ use ratatui::{
     widgets::{Block, Paragraph},
 };
 use std::path::PathBuf;
-use tui_input::{Input, backend::crossterm::EventHandler};
+use tui_input::{Input, InputRequest, backend::crossterm::EventHandler};
 
-use crate::dependencies::{HandlesInput, InputMode};
+use crate::{App, dependencies::{HandlesInput, InputMode}};
 
 #[derive(Debug, Default, Clone)]
 pub struct PathField {
     /// Current value of the input box
-    input: Input,
+    pub input: Input,
     /// Current input mode
     pub input_mode: InputMode,
     pub in_focus: bool,
@@ -28,28 +28,11 @@ impl PathField {
         }
     }
 
-    pub fn start_editing(&mut self) {
-        self.input_mode = InputMode::Editing;
-        loop {
-            if let Ok(event) = event::read() {
-                if let Event::Key(key) = event {
-                    match key.code {
-                        KeyCode::Enter => (),
-                        KeyCode::Esc => {
-                            self.stop_editing();
-                            break;
-                        }
-                        _ => {
-                            self.input.handle_event(&event);
-                        }
-                    }
-                }
-            }
+    pub fn set_value(&mut self, value: String) {
+        self.input.reset();
+        for c in value.chars() {
+            self.input.handle(InputRequest::InsertChar(c));
         }
-    }
-
-    pub fn stop_editing(&mut self) {
-        self.input_mode = InputMode::Normal
     }
 
     pub fn render_input(&self, frame: &mut Frame, area: Rect) {
