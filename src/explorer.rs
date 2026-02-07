@@ -1,9 +1,9 @@
-use std::path::PathBuf;
+use std::{fs::{self, remove_dir_all, remove_file}, path::PathBuf};
 
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{Frame, layout::{Constraint, Margin, Rect}, style::{Color, Modifier, Style, Stylize}, text::Text, widgets::{Block, Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState}};
 
-use crate::{dependencies::HandlesInput, file_deps::get_data};
+use crate::{App, dependencies::HandlesInput, file_deps::get_data};
 
 #[derive(Debug, Clone)]
 pub struct FileEntry {
@@ -22,6 +22,8 @@ pub enum EntryType {
 }
 
 pub struct Explorer {
+    pub root_path: PathBuf,
+    pub include_hidden: bool,
     pub files: Vec<FileEntry>,
     pub state: TableState,
     pub scroll_state: ScrollbarState,
@@ -42,17 +44,20 @@ impl Explorer {
         const ITEM_HEIGHT: usize = 1;
         if let Ok(data_vec) = get_data(path, include_hidden, false, false, false) {
             return Explorer { 
+                root_path: PathBuf::from(path),
+                include_hidden: include_hidden,
                 files: data_vec.clone(),
                 state: TableState::default().with_selected(0),
                 scroll_state: ScrollbarState::new((data_vec.len()-1) * ITEM_HEIGHT),
                 in_focus: true,
             };
         } else {
-            return Explorer { files: vec![], state: TableState::default().with_selected(0), scroll_state: ScrollbarState::new(ITEM_HEIGHT), in_focus: true,}
+            return Explorer { root_path: PathBuf::from(path), include_hidden: include_hidden, files: vec![], state: TableState::default().with_selected(0), scroll_state: ScrollbarState::new(ITEM_HEIGHT), in_focus: true,}
         }
     }
 
     pub fn refresh(&mut self, path: &PathBuf, include_hidden: bool) {
+        self.root_path = path.clone();
         if let Ok(data_vec) = get_data(path, include_hidden, false, false, false) {
             self.files = data_vec;
         } else {
@@ -181,7 +186,25 @@ impl HandlesInput for Explorer {
                         match key_event.code {
                             KeyCode::Char('j') | KeyCode::Down => self.next_row(),
                             KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
-                            _ => ()
+                            KeyCode::Delete => {
+                                if let Some(idx) = self.state.selected() {
+                                    let mut file_path = self.root_path.clone();
+                                    file_path = file_path.join(self.files[idx].name.clone());
+                                    if self.files[idx].e_type == EntryType::Dir {
+                                        if let Ok(suc) = remove_dir_all(&file_path) {};
+                                    } else if self.files[idx].e_type == EntryType::File {
+                                        if let Ok(suc) = fs::remove_file(file_path) {};
+                                    }
+                                }
+                                self.refresh(&self.root_path.clone(), self.include_hidden);
+                            },
+                            KeyCode::Char('c') => {
+                                // Copying a file into clipboard
+                            },
+                            KeyCode::Char('v') => {
+                                // Pasting the file in clipboard into the directory in explorer
+                            },
+                            _ => {}
                         }
                     }
                 }

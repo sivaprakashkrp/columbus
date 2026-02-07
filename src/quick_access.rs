@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{fs, ops::Index, path::PathBuf};
 
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
@@ -10,13 +10,20 @@ use ratatui::{
         Block, Cell, HighlightSpacing, Row, ScrollbarState, Table, TableState
     },
 };
+use serde::{Deserialize};
+use toml::de::Error;
 
 use crate::{dependencies::HandlesInput};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct QAFileEntry {
     pub name: String,
     pub path: PathBuf,
+}
+
+#[derive(Debug, Deserialize)]
+struct StoredQAEntity {
+    files: Vec<QAFileEntry>,
 }
 
 pub struct QuickAccess {
@@ -38,7 +45,7 @@ const ITEM_HEIGHT: usize = 1;
 impl QuickAccess {
     pub fn new() -> QuickAccess {
         const ITEM_HEIGHT: usize = 1;
-        let data_vec = get_files();
+        let data_vec = get_qa_files();
         QuickAccess {
             entries: data_vec.clone(),
             state: TableState::default().with_selected(0),
@@ -136,7 +143,19 @@ impl QuickAccess {
 
 }
 
-pub fn get_files() -> Vec<QAFileEntry> {
+pub fn get_qa_files() -> Vec<QAFileEntry> {
+    #[cfg(target_os = "windows")]
+    let qa_path = "D:\\Applications\\columbus\\qa_files.toml";
+    #[cfg(target_os = "linux")]
+    let qa_path = "~/.config/columbus/qa_files.toml";
+
+    if let Ok(contents) = fs::read_to_string(qa_path) {
+        let file_res: Result<StoredQAEntity, Error> = toml::from_str(&contents);
+        if let Ok(files) = file_res {
+            return files.files;
+        }
+    }
+
     vec![
         QAFileEntry { name: String::from("Hello there"), path: PathBuf::from(".")}
     ]

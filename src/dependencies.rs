@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use ratatui::{Frame, layout::Rect, style::{Color}, widgets::{Block, BorderType, Widget}};
 
 use crate::{App, CurrentWidget};

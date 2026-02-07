@@ -114,6 +114,16 @@ impl App {
                                         },
                                         CurrentWidget::CommandBar => {
                                             handle_command_enter(self);
+                                        },
+                                        CurrentWidget::QuickAccess => {
+                                            if let Some(selected_idx) = self.quick_access.state.selected() {
+                                                let entry = &self.quick_access.entries[selected_idx];
+                                                let dir_path = PathBuf::from(entry.path.clone());
+                                                self.path_field.set_value(String::from(dir_path.to_string_lossy()));
+                                                self.explorer.refresh(&dir_path, self.include_hidden);
+                                                self.quick_access.state.select(Some(0));
+                                                focus_to(self, CurrentWidget::Explorer);
+                                            } else {}
                                         }
                                         _ => {},
                                     }

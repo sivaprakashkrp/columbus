@@ -1,10 +1,10 @@
-use std::{fs::File, path::PathBuf, thread::sleep, time::Duration};
+use std::{fs::{self, File, create_dir_all}, path::PathBuf, thread::sleep, time::Duration};
 
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{Frame, layout::Rect, style::{Color, Style, Stylize}, text::{Line}, widgets::{Block, Paragraph}};
 use tui_input::{Input, InputRequest, backend::crossterm::EventHandler};
 
-use crate::{App, dependencies::{HandlesInput, InputMode}};
+use crate::{App, CurrentWidget, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}};
 
 pub struct Command {
     /// Current value of the input box
@@ -76,19 +76,44 @@ impl Command {
 pub fn handle_command_enter(app: &mut App) {
     let cmd = app.command.input.value();
     let split_cmd: Vec<&str> = cmd.split(" ").collect();
-    if split_cmd[0] == "n" {
-        let dir_path = PathBuf::from(app.path_field.input.value());
-        let mut new_file = dir_path.clone();
-        new_file.push(split_cmd[1]);
-        if let Err(err) = File::create_new(new_file) {
-            app.command.set_value(String::from("The file already exists"));
-        } else {
-            app.command.set_value(String::from("The file created successfully"));
-        }
-        app.explorer.refresh(&dir_path, app.include_hidden);
-        sleep(Duration::from_secs(1));
-        app.command.input.reset();
+    match split_cmd[0] {
+        "n" => {
+            let dir_path = PathBuf::from(app.path_field.input.value());
+            let mut new_file = dir_path.clone();
+            new_file.push(split_cmd[1]);
+            if let Err(err) = File::create_new(new_file) {
+                app.command.set_value(String::from("The file already exists"));
+            } else {
+                app.command.set_value(String::from("The file was created successfully"));
+            }
+            app.explorer.refresh(&dir_path, app.include_hidden);
+            sleep(Duration::from_secs(1));
+            app.command.input.reset();},
+        "b" => {
+            let dir_path = PathBuf::from(app.path_field.input.value());
+            let mut new_file = dir_path.clone();
+            new_file.push(split_cmd[1]);
+            if let Err(err) = create_dir_all(new_file) {
+                app.command.set_value(String::from("The Directory already exists"));
+            } else {
+                app.command.set_value(String::from("The Directory was created successfully"));
+            }
+            app.explorer.refresh(&dir_path, app.include_hidden);
+            sleep(Duration::from_secs(1));
+            app.command.input.reset();
+        },
+        "r" => {
+            let root = PathBuf::from(app.path_field.input.value());
+            let src = root.join(split_cmd[1]);
+            let dest = root.join(split_cmd[2]);
+            if let Ok(suc) = fs::rename(src, dest) {};
+            app.explorer.refresh(&root, app.include_hidden);
+            sleep(Duration::from_secs(1));
+            app.command.input.reset();
+        },
+        _ => {}
     }
+    focus_to(app, CurrentWidget::Explorer);
 }
 
 impl HandlesInput for Command {
