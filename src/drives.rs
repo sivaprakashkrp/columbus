@@ -79,6 +79,12 @@ impl Drives {
         self.scroll_state = self.scroll_state.position(i * ITEM_HEIGHT);
     }
 
+    pub fn refresh(&mut self) {
+        self.drives = get_drives();
+        self.state.select(Some(0));
+        self.scroll_state = self.scroll_state.position(0 * ITEM_HEIGHT);
+    }
+
     pub fn create_drives_table(&mut self, frame: &mut Frame, area: Rect) {
         let header_style = Style::default().fg(Color::Black).bg(Color::Blue);
         let selected_row_style = Style::default()
@@ -159,6 +165,9 @@ impl HandlesInput for Drives {
                         match key_event.code {
                             KeyCode::Char('j') | KeyCode::Down => self.next_row(),
                             KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
+                            KeyCode::Char('r') => {
+                                self.refresh();
+                            },
                             _ => ()
                         }
                     }

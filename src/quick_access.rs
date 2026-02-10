@@ -145,10 +145,20 @@ impl QuickAccess {
 
 pub fn get_qa_files() -> Vec<QAFileEntry> {
     #[cfg(target_os = "windows")]
-    let qa_path = "D:\\Applications\\columbus\\qa_files.toml";
+    let qa_path = PathBuf::from("D:\\Applications\\columbus\\qa_files.toml");
     #[cfg(target_os = "linux")]
-    let qa_path = "~/.config/columbus/qa_files.toml";
+    {
+        use std::env;
 
+        let mut qa_path: PathBuf;
+
+        if let Ok(home_path) = env::var_os("HOME") {
+            qa_path = PathBuf::from(home_path);
+            qa_path.push("columbus/qa_files.toml");
+        }
+        
+    }
+    
     if let Ok(contents) = fs::read_to_string(qa_path) {
         let file_res: Result<StoredQAEntity, Error> = toml::from_str(&contents);
         if let Ok(files) = file_res {

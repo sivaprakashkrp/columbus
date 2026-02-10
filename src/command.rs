@@ -111,6 +111,27 @@ pub fn handle_command_enter(app: &mut App) {
             sleep(Duration::from_secs(1));
             app.command.input.reset();
         },
+        "term" => {
+            if cfg!(target_os = "windows") {
+                let result = std::process::Command::new("powershell")
+                    .args(["/C", "start cmd /K"])
+                    .current_dir(app.path_field.input.value())
+                    .spawn();
+                if let Ok(child) = result {} else {}
+            } else if cfg!(target_os = "macos") {
+                let result = std::process::Command::new("sh")
+                    .args(["-c"])
+                    .arg(format!("cd {} && $TERM", app.path_field.input.value()))
+                    .spawn();
+                if let Ok(child) = result {} else {}
+            } else {
+                let result = std::process::Command::new("xterm")
+                    .args(["-e", "sh", "-c", &format!("cd {} && sh", app.path_field.input.value())])
+                    .spawn();
+                if let Ok(child) = result {} else {}
+            }
+        },
+        "exit" | "q" | "quit" => app.exit = true,
         _ => {}
     }
     focus_to(app, CurrentWidget::Explorer);

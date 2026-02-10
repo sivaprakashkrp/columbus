@@ -186,6 +186,9 @@ impl HandlesInput for Explorer {
                         match key_event.code {
                             KeyCode::Char('j') | KeyCode::Down => self.next_row(),
                             KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
+                            KeyCode::Char('r') => {
+                                self.refresh(&self.root_path.clone(), self.include_hidden);
+                            }
                             KeyCode::Delete => {
                                 if let Some(idx) = self.state.selected() {
                                     let mut file_path = self.root_path.clone();
