@@ -1,9 +1,25 @@
-use std::{fs::{self, remove_dir_all, remove_file}, path::PathBuf};
+use std::path::PathBuf;
+
+use std::fs::{remove_dir_all, remove_file};
 
 use crossterm::event::{Event, KeyCode, KeyEventKind};
-use ratatui::{Frame, layout::{Constraint, Margin, Rect}, style::{Color, Modifier, Style, Stylize}, text::Text, widgets::{Block, Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState}};
+use ratatui::{
+    Frame,
+    layout::{Constraint, Margin, Rect},
+    style::{Color, Modifier, Style, Stylize},
+    text::Text,
+    widgets::{
+        Block, Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table,
+        TableState,
+    },
+};
 
-use crate::{App, dependencies::HandlesInput, file_deps::get_data};
+use crate::dependencies::delete;
+use crate::{
+    App,
+    dependencies::{HandlesInput, copy_directory, copy_file},
+    file_deps::get_data,
+};
 
 #[derive(Debug, Clone)]
 pub struct FileEntry {
@@ -24,7 +40,10 @@ pub enum EntryType {
 pub struct Explorer {
     pub root_path: PathBuf,
     pub include_hidden: bool,
+    pub copy_src_path: Option<PathBuf>,
     pub files: Vec<FileEntry>,
+    pub copied_item: Option<EntryType>,
+    pub file_is_cut: bool,
     pub state: TableState,
     pub scroll_state: ScrollbarState,
     pub in_focus: bool,
@@ -33,26 +52,43 @@ pub struct Explorer {
 impl FileEntry {
     fn ref_array(&self) -> [String; 4] {
         let type_of_entry = format!("{:?}", self.e_type);
-        [type_of_entry, self.name.clone(), self.size.clone(), self.modified_at.clone()]
+        [
+            type_of_entry,
+            self.name.clone(),
+            self.size.clone(),
+            self.modified_at.clone(),
+        ]
     }
 }
 
 const ITEM_HEIGHT: usize = 1;
 impl Explorer {
-
     pub fn new(path: &PathBuf, include_hidden: bool) -> Explorer {
         const ITEM_HEIGHT: usize = 1;
         if let Ok(data_vec) = get_data(path, include_hidden, false, false, false) {
-            return Explorer { 
+            return Explorer {
                 root_path: PathBuf::from(path),
                 include_hidden: include_hidden,
                 files: data_vec.clone(),
+                copy_src_path: None,
+                copied_item: None,
+                file_is_cut: false,
                 state: TableState::default().with_selected(0),
-                scroll_state: ScrollbarState::new((data_vec.len()-1) * ITEM_HEIGHT),
+                scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
                 in_focus: true,
             };
         } else {
-            return Explorer { root_path: PathBuf::from(path), include_hidden: include_hidden, files: vec![], state: TableState::default().with_selected(0), scroll_state: ScrollbarState::new(ITEM_HEIGHT), in_focus: true,}
+            return Explorer {
+                root_path: PathBuf::from(path),
+                include_hidden: include_hidden,
+                files: vec![],
+                state: TableState::default().with_selected(0),
+                scroll_state: ScrollbarState::new(ITEM_HEIGHT),
+                in_focus: true,
+                copy_src_path: None,
+                copied_item: None,
+                file_is_cut: false,
+            };
         }
     }
 
@@ -98,9 +134,7 @@ impl Explorer {
     }
 
     pub fn create_explorer_table(&mut self, frame: &mut Frame, area: Rect) {
-        let header_style = Style::default()
-            .fg(Color::Black)
-            .bg(Color::Blue);
+        let header_style = Style::default().fg(Color::Black).bg(Color::Blue);
         let selected_row_style = Style::default()
             .add_modifier(Modifier::REVERSED)
             .fg(Color::Cyan);
@@ -138,25 +172,22 @@ impl Explorer {
                 Constraint::Min(10),
                 Constraint::Min(15),
             ],
-        ).block(
+        )
+        .block(
             Block::bordered()
-            .border_type(ratatui::widgets::BorderType::Rounded)
-            .title(" Explorer ")
-            .border_style(
-                if self.in_focus {
+                .border_type(ratatui::widgets::BorderType::Rounded)
+                .title(" Explorer ")
+                .border_style(if self.in_focus {
                     Style::default().fg(Color::Cyan)
                 } else {
                     Style::default()
-                }
-            )
+                }),
         )
         .header(header)
         .row_highlight_style(selected_row_style)
         .column_highlight_style(selected_col_style)
         .cell_highlight_style(selected_cell_style)
-        .highlight_symbol(Text::from(vec![
-            bar.into(),
-        ]))
+        .highlight_symbol(Text::from(vec![bar.into()]))
         .bg(Color::Black)
         .highlight_spacing(HighlightSpacing::Always);
         frame.render_stateful_widget(t, area, &mut self.state);
@@ -175,6 +206,75 @@ impl Explorer {
             &mut self.scroll_state,
         );
     }
+
+    fn handle_copy(&mut self) {
+        if let Some(idx) = self.state.selected() {
+            let mut file_path = self.root_path.clone();
+            file_path.push(&self.files[idx].name);
+            self.copy_src_path = Some(file_path);
+            if self.files[idx].e_type == EntryType::File {
+                self.copied_item = Some(EntryType::File)
+            } else {
+                self.copied_item = Some(EntryType::Dir)
+            }
+        }
+    }
+
+    fn handle_paste(&mut self) {
+        if self.copy_src_path != None {
+            match self.copied_item.clone() {
+                Some(file_type) => {
+                    let mut paste_path = self.root_path.clone();
+                    if let Some(src_file_path) = self.copy_src_path.clone() {
+                        match src_file_path.file_name() {
+                            Some(file_name) => {
+                                let mut file_name_str =
+                                    String::from(file_name.to_str().unwrap_or("default"));
+                                loop {
+                                    let mut flag: bool = false;
+                                    for entry in &self.files {
+                                        if entry.name == file_name_str {
+                                            file_name_str.insert_str(0, "Copy-");
+                                            flag = true;
+                                        }
+                                    }
+                                    if !flag {
+                                        break;
+                                    }
+                                }
+                                paste_path.push(file_name_str)
+                            }
+                            None => {}
+                        }
+                        if file_type.to_owned() == EntryType::File {
+                            if let Ok(suc) = copy_file(&src_file_path, &paste_path) {
+                                // Handle success
+                            }
+                        } else {
+                            if let Ok(_suc) = copy_directory(&src_file_path, &paste_path) {
+                                // Handle success
+                            }
+                        }
+                        if self.file_is_cut == true {
+                            delete(&src_file_path, file_type.to_owned());
+                            self.file_is_cut = false;
+                        }
+                        self.refresh(&self.root_path.clone(), self.include_hidden);
+                    }
+                }
+                None => {}
+            }
+        }
+    }
+
+    fn handle_delete(&mut self) {
+        if let Some(idx) = self.state.selected() {
+            let mut file_path = self.root_path.clone();
+            file_path = file_path.join(self.files[idx].name.clone());
+            delete(&file_path, self.files[idx].e_type.clone());
+        }
+        self.refresh(&self.root_path.clone(), self.include_hidden);
+    }
 }
 
 impl HandlesInput for Explorer {
@@ -189,24 +289,13 @@ impl HandlesInput for Explorer {
                             KeyCode::Char('r') => {
                                 self.refresh(&self.root_path.clone(), self.include_hidden);
                             }
-                            KeyCode::Delete => {
-                                if let Some(idx) = self.state.selected() {
-                                    let mut file_path = self.root_path.clone();
-                                    file_path = file_path.join(self.files[idx].name.clone());
-                                    if self.files[idx].e_type == EntryType::Dir {
-                                        if let Ok(suc) = remove_dir_all(&file_path) {};
-                                    } else if self.files[idx].e_type == EntryType::File {
-                                        if let Ok(suc) = fs::remove_file(file_path) {};
-                                    }
-                                }
-                                self.refresh(&self.root_path.clone(), self.include_hidden);
-                            },
-                            KeyCode::Char('c') => {
-                                // Copying a file into clipboard
-                            },
-                            KeyCode::Char('v') => {
-                                // Pasting the file in clipboard into the directory in explorer
-                            },
+                            KeyCode::Delete => self.handle_delete(),
+                            KeyCode::Char('c') => self.handle_copy(),
+                            KeyCode::Char('v') => self.handle_paste(),
+                            KeyCode::Char('x') => {
+                                self.handle_copy();
+                                self.file_is_cut = true;
+                            }
                             _ => {}
                         }
                     }
