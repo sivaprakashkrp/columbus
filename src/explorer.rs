@@ -1,7 +1,4 @@
 use std::path::PathBuf;
-
-use std::fs::{remove_dir_all, remove_file};
-
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
     Frame,
@@ -16,7 +13,6 @@ use ratatui::{
 
 use crate::dependencies::delete;
 use crate::{
-    App,
     dependencies::{HandlesInput, copy_directory, copy_file},
     file_deps::get_data,
 };
@@ -247,7 +243,7 @@ impl Explorer {
                             None => {}
                         }
                         if file_type.to_owned() == EntryType::File {
-                            if let Ok(suc) = copy_file(&src_file_path, &paste_path) {
+                            if let Ok(_suc) = copy_file(&src_file_path, &paste_path) {
                                 // Handle success
                             }
                         } else {

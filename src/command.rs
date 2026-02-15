@@ -4,7 +4,7 @@ use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{Frame, layout::Rect, style::{Color, Style, Stylize}, text::{Line}, widgets::{Block, Paragraph}};
 use tui_input::{Input, InputRequest, backend::crossterm::EventHandler};
 
-use crate::{App, CurrentWidget, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}};
+use crate::{App, CurrentWidget, dependencies::{HandlesInput, InputMode, focus_to}};
 
 pub struct Command {
     /// Current value of the input box
@@ -131,7 +131,7 @@ pub fn handle_command_enter(app: &mut App) {
                 if let Ok(child) = result {} else {}
             }
         },
-        "exit" | "q" | "quit" => app.exit = true,
+        "exit" | "q" | "quit" => app.exit_app(),
         _ => {}
     }
     focus_to(app, CurrentWidget::Explorer);

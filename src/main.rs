@@ -6,7 +6,7 @@ use ratatui::{
     style::Stylize,
     widgets::{Block, BorderType, Paragraph},
 };
-use std::{env::current_dir, io, path::PathBuf, sync::mpsc, thread};
+use std::{env::current_dir, io, path::{Path, PathBuf}, sync::mpsc, thread::{self, current}};
 use strum::{EnumIter, IntoEnumIterator};
 
 mod command;
@@ -22,7 +22,7 @@ use crate::{
     dependencies::{HandlesInput, InputMode, focus_to, focus_toggler},
     drives::Drives,
     explorer::{EntryType, Explorer},
-    path_field::PathField, quick_access::QuickAccess,
+    path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data},
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
@@ -89,8 +89,15 @@ impl App {
                                 KeyCode::Enter => {
                                     match self.focus_on {
                                         CurrentWidget::PathField => {
-                                            self.explorer.refresh(&PathBuf::from(self.path_field.input.value()), self.include_hidden);
-                                            focus_to(self, CurrentWidget::Explorer);
+                                            let mut input_path = PathBuf::from(self.path_field.input.value());
+                                            if input_path.exists() {
+                                                if !input_path.is_dir() {
+                                                    input_path = PathBuf::from(input_path.parent().unwrap_or(Path::new(".")));
+                                                }
+                                                self.path_field.set_value(String::from(input_path.to_string_lossy()));
+                                                self.explorer.refresh(&input_path, self.include_hidden);
+                                                focus_to(self, CurrentWidget::Explorer);
+                                            }
                                         },
                                         CurrentWidget::Explorer => {
                                             if let Some(selected_idx) = self.explorer.state.selected() {
@@ -127,6 +134,7 @@ impl App {
                                         }
                                         _ => {},
                                     }
+                                    update_qa_files(self, String::from(PathBuf::from(self.path_field.input.value()).file_name().and_then(|name| name.to_str()).unwrap_or("default")), PathBuf::from(self.path_field.input.value()));
                                 },
                                 KeyCode::Char(':') => {
                                     if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
@@ -160,7 +168,7 @@ impl App {
                                      if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
                                         self.get_focused_widget().handle_input(rec_event);
                                     } else {
-                                        self.exit = true
+                                        self.exit_app();
                                     }
                                 },
                                 _ => self.get_focused_widget().handle_input(rec_event),
@@ -247,6 +255,11 @@ impl App {
         }
         return &mut self.explorer;
     }
+
+    fn exit_app(&mut self) {
+        write_qa_data(self);
+        self.exit = true;
+    }
 }
 
 // impl Widget for &App {
@@ -287,10 +300,14 @@ impl App {
 fn main() -> io::Result<()> {
     let cli = CLI::parse();
 
-    let current_path = match cli.path {
+    let mut current_path = match cli.path {
         Some(res) => res,
         None => current_dir().unwrap_or(PathBuf::from(".")),
     };
+
+    current_path = if current_path.is_dir() { current_path } else { PathBuf::from(&current_path.parent().unwrap_or(Path::new(".")))};
+
+    current_path = std::path::absolute(current_path.clone()).unwrap_or(current_path);
 
     let mut terminal = ratatui::init();
 

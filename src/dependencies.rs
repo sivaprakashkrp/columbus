@@ -1,13 +1,6 @@
 use std::{fs::{self, remove_dir_all, remove_file}, path::PathBuf};
 
 use fs_extra::dir::{CopyOptions, copy};
-use ratatui::{
-    Frame,
-    layout::Rect,
-    style::Color,
-    widgets::{Block, BorderType, Widget},
-};
-
 use crate::{App, CurrentWidget, explorer::EntryType};
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
@@ -17,18 +10,18 @@ pub enum InputMode {
     Editing,
 }
 
-pub trait FocusableWidget {
-    fn on_focus(&self) -> bool;
-}
+// pub trait FocusableWidget {
+//     fn on_focus(&self) -> bool;
+// }
 
-pub fn render_widget(frame: &mut Frame, widget: impl Widget + FocusableWidget, area: Rect) {
-    let mut cont_block = Block::bordered().border_type(BorderType::Rounded);
-    if widget.on_focus() {
-        cont_block = cont_block.border_style(Color::Cyan);
-    }
-    frame.render_widget(&cont_block, area);
-    frame.render_widget(widget, cont_block.inner(area));
-}
+// pub fn render_widget(frame: &mut Frame, widget: impl Widget + FocusableWidget, area: Rect) {
+//     let mut cont_block = Block::bordered().border_type(BorderType::Rounded);
+//     if widget.on_focus() {
+//         cont_block = cont_block.border_style(Color::Cyan);
+//     }
+//     frame.render_widget(&cont_block, area);
+//     frame.render_widget(widget, cont_block.inner(area));
+// }
 
 pub fn focus_toggler(app: &mut App) {
     match app.focus_on {
@@ -82,8 +75,8 @@ pub fn copy_directory(src: &PathBuf, dest: &PathBuf) -> Result<(), String> {
 
 pub fn delete(file_path: &PathBuf, file_type: EntryType) {
     if file_type == EntryType::Dir {
-        if let Ok(suc) = remove_dir_all(&file_path) {};
+        if let Ok(_suc) = remove_dir_all(&file_path) {};
     } else if file_type == EntryType::File {
-        if let Ok(suc) = remove_file(file_path) {};
+        if let Ok(_suc) = remove_file(file_path) {};
     }
 }

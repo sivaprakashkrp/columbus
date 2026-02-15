@@ -1,4 +1,4 @@
-use std::{fs, ops::Index, path::PathBuf};
+use std::{ffi::OsStr, fs, ops::Index, path::{Path, PathBuf}, process::exit};
 
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
@@ -10,18 +10,19 @@ use ratatui::{
         Block, Cell, HighlightSpacing, Row, ScrollbarState, Table, TableState
     },
 };
-use serde::{Deserialize};
+use serde::{Deserialize, Serialize};
 use toml::de::Error;
 
-use crate::{dependencies::HandlesInput};
+use crate::{App, dependencies::HandlesInput};
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QAFileEntry {
     pub name: String,
     pub path: PathBuf,
+    pub count: u32,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct StoredQAEntity {
     files: Vec<QAFileEntry>,
 }
@@ -140,7 +141,6 @@ impl QuickAccess {
         .highlight_spacing(HighlightSpacing::Always);
         frame.render_stateful_widget(t, area, &mut self.state);
     }
-
 }
 
 pub fn get_qa_files() -> Vec<QAFileEntry> {
@@ -154,21 +154,79 @@ pub fn get_qa_files() -> Vec<QAFileEntry> {
 
         if let Ok(home_path) = env::var_os("HOME") {
             qa_path = PathBuf::from(home_path);
-            qa_path.push("columbus/qa_files.toml");
+            qa_path.push(".config/columbus/qa_files.toml");
         }
         
     }
     
-    if let Ok(contents) = fs::read_to_string(qa_path) {
-        let file_res: Result<StoredQAEntity, Error> = toml::from_str(&contents);
-        if let Ok(files) = file_res {
-            return files.files;
+    if qa_path.exists() {
+        if let Ok(contents) = fs::read_to_string(qa_path.clone()) {
+            let file_res: Result<StoredQAEntity, Error> = toml::from_str(&contents);
+            if let Ok(files) = file_res {
+                let mut read_files = files.files;
+                read_files.sort_by_key(|a| a.count);
+                let max_limit = std::cmp::min(read_files.len(), 10);
+                return read_files[0..max_limit].to_vec();
+            }
         }
     }
 
     vec![
-        QAFileEntry { name: String::from("Hello there"), path: PathBuf::from(".")}
+        QAFileEntry {name: String::from("Columbus_QA"), path: PathBuf::from(qa_path.parent().unwrap_or(Path::new("."))), count: 0}
     ]
+}
+
+pub fn update_qa_files(app: &mut App, file_name: String, path: PathBuf) {
+    let array = app.quick_access.entries.clone();
+    let iterator = array.iter().enumerate();
+    let mut flag = true;
+    let input_path = if path.is_dir() {path} else {PathBuf::from(path.parent().unwrap_or(Path::new(&path)))} ;
+    for (i, entry) in iterator {
+        if entry.path == input_path {
+            app.quick_access.entries[i].count += 1;
+            flag = false;
+            break;
+        }
+    }
+    if flag {
+        if input_path.is_absolute() && input_path.parent().map_or(true, |p| p == input_path) {
+            app.quick_access.entries.push(QAFileEntry { name: String::from(input_path.to_string_lossy()), path: input_path, count: 1 })
+        } else {
+            app.quick_access.entries.push(QAFileEntry { name: file_name.clone(), path: input_path, count: 1 })
+        }
+    }
+}
+
+pub fn write_qa_data(app: &mut App) {
+    #[cfg(target_os = "windows")]
+    let qa_path = PathBuf::from("D:\\Applications\\columbus\\qa_files.toml");
+    #[cfg(target_os = "linux")]
+    {
+        use std::env;
+
+        let mut qa_path: PathBuf;
+
+        if let Ok(home_path) = env::var_os("HOME") {
+            qa_path = PathBuf::from(home_path);
+            qa_path.push(".config/columbus/qa_files.toml");
+        }
+    }
+
+    let to_write_str = StoredQAEntity { files: app.quick_access.entries.clone() };
+
+    match toml::to_string(&to_write_str) {
+        Ok(content) => {
+            if let Err(_res) = fs::write(qa_path, content) {
+                // println!("{:?}", content);
+                println!("Error in writing qa data");
+                exit(1);
+            }
+        },
+        Err(err) => {
+            println!("Error in creating qa data to write, {err}");
+            exit(2);
+        }
+    }
 }
 
 impl HandlesInput for QuickAccess {
