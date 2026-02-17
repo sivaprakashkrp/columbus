@@ -6,7 +6,7 @@ use ratatui::{
     style::Stylize,
     widgets::{Block, BorderType, Paragraph},
 };
-use std::{env::current_dir, io, path::{Path, PathBuf}, sync::mpsc, thread::{self, current}};
+use std::{env::current_dir, io, path::{Path, PathBuf}, sync::mpsc, thread::{self}};
 use strum::{EnumIter, IntoEnumIterator};
 
 mod command;
@@ -17,11 +17,12 @@ mod file_deps;
 mod file_size_deps;
 mod path_field;
 mod quick_access;
+mod open_files;
 use crate::{
     command::{Command, handle_command_enter},
     dependencies::{HandlesInput, InputMode, focus_to, focus_toggler},
     drives::Drives,
-    explorer::{EntryType, Explorer},
+    explorer::{EntryType, Explorer, explorer_handle_enter},
     path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data},
 };
 
@@ -100,16 +101,8 @@ impl App {
                                             }
                                         },
                                         CurrentWidget::Explorer => {
-                                            if let Some(selected_idx) = self.explorer.state.selected() {
-                                                let entry = &self.explorer.files[selected_idx];
-                                                if entry.e_type == EntryType::Dir {
-                                                    let mut dir_path = PathBuf::from(self.path_field.input.value());
-                                                    dir_path.push(entry.name.clone());
-                                                    self.path_field.set_value(String::from(dir_path.to_string_lossy()));
-                                                    self.explorer.refresh(&dir_path, self.include_hidden);
-                                                }
-                                            } else {}
-                                        },
+                                            explorer_handle_enter(self);
+                                        }
                                         CurrentWidget::Drives => {
                                             if let Some(selected_idx) = self.drives.state.selected() {
                                                 let entry = &self.drives.drives[selected_idx];

@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, fs, ops::Index, path::{Path, PathBuf}, process::exit};
+use std::{fs, path::{Path, PathBuf}, process::exit};
 
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
@@ -165,7 +165,8 @@ pub fn get_qa_files() -> Vec<QAFileEntry> {
             if let Ok(files) = file_res {
                 let mut read_files = files.files;
                 read_files.sort_by_key(|a| a.count);
-                let max_limit = std::cmp::min(read_files.len(), 10);
+                read_files.reverse();
+                let max_limit = std::cmp::min(read_files.len(), 20);
                 return read_files[0..max_limit].to_vec();
             }
         }
@@ -182,6 +183,9 @@ pub fn update_qa_files(app: &mut App, file_name: String, path: PathBuf) {
     let mut flag = true;
     let input_path = if path.is_dir() {path} else {PathBuf::from(path.parent().unwrap_or(Path::new(&path)))} ;
     for (i, entry) in iterator {
+        if !entry.path.exists() {
+            app.quick_access.entries.remove(i);
+        }
         if entry.path == input_path {
             app.quick_access.entries[i].count += 1;
             flag = false;

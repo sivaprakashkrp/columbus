@@ -11,7 +11,7 @@ use ratatui::{
     },
 };
 
-use crate::dependencies::delete;
+use crate::{App, dependencies::delete, open_files::{FileOptions, handle_file_open, read_file_options}};
 use crate::{
     dependencies::{HandlesInput, copy_directory, copy_file},
     file_deps::get_data,
@@ -40,6 +40,7 @@ pub struct Explorer {
     pub files: Vec<FileEntry>,
     pub copied_item: Option<EntryType>,
     pub file_is_cut: bool,
+    pub file_open_options: FileOptions,
     pub state: TableState,
     pub scroll_state: ScrollbarState,
     pub in_focus: bool,
@@ -69,6 +70,7 @@ impl Explorer {
                 copy_src_path: None,
                 copied_item: None,
                 file_is_cut: false,
+                file_open_options: read_file_options(),
                 state: TableState::default().with_selected(0),
                 scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
                 in_focus: true,
@@ -84,6 +86,7 @@ impl Explorer {
                 copy_src_path: None,
                 copied_item: None,
                 file_is_cut: false,
+                file_open_options: read_file_options(),
             };
         }
     }
@@ -272,6 +275,22 @@ impl Explorer {
         self.refresh(&self.root_path.clone(), self.include_hidden);
     }
 }
+
+pub fn explorer_handle_enter(app: &mut App) {
+        if let Some(selected_idx) = app.explorer.state.selected() {
+            let entry = &app.explorer.files[selected_idx];
+            if entry.e_type == EntryType::Dir {
+                let mut dir_path = PathBuf::from(app.path_field.input.value());
+                dir_path.push(entry.name.clone());
+                app.path_field.set_value(String::from(dir_path.to_string_lossy()));
+                app.explorer.refresh(&dir_path, app.include_hidden);
+            } else {
+                let mut file_path = PathBuf::from(app.path_field.input.value());
+                file_path.push(entry.name.clone());
+                handle_file_open(&file_path, app.explorer.file_open_options.clone());
+            }
+        } else {}
+    }
 
 impl HandlesInput for Explorer {
     fn handle_input(&mut self, event: Event) {
