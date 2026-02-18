@@ -6,6 +6,7 @@ use ratatui::{
     style::Stylize,
     widgets::{Block, BorderType, Paragraph},
 };
+use tui_dialog::centered_rect;
 use std::{env::current_dir, io, path::{Path, PathBuf}, sync::mpsc, thread::{self}};
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -18,12 +19,9 @@ mod file_size_deps;
 mod path_field;
 mod quick_access;
 mod open_files;
+// mod dialog;
 use crate::{
-    command::{Command, handle_command_enter},
-    dependencies::{HandlesInput, InputMode, focus_to, focus_toggler},
-    drives::Drives,
-    explorer::{EntryType, Explorer, explorer_handle_enter},
-    path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data},
+    command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
@@ -232,8 +230,13 @@ impl App {
         // Rendering the drives area
         self.drives.create_drives_table(frame, drive_area);
 
-        // Renderin the quick access area
+        // Rendering the quick access area
         self.quick_access.create_qa_entries_table(frame, quick_access_area);
+
+        // Rendering the Dialog Box
+        // let dialog_box = DialogBox::new(String::from("Hello World"));
+        // let dialog_box_area = centered_rect(frame.area(), 30, 20, 0, 0);
+        // dialog_box.render_dialog(frame, dialog_box_area);
     }
 
     fn get_focused_widget(&mut self) -> &mut dyn HandlesInput {
@@ -329,7 +332,7 @@ fn main() -> io::Result<()> {
 fn handle_input_events(tx: mpsc::Sender<Event>) {
     loop {
         if let Ok(rec_event) = crossterm::event::read() {
-            if let Ok(suc) = tx.send(rec_event) {
+            if let Ok(_suc) = tx.send(rec_event) {
                 // Success of transmission
             }
         }

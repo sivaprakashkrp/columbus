@@ -1,4 +1,4 @@
-use std::{ffi::OsStr, fs, process::{Command, exit}};
+use std::{fs, process::{Command}};
 #[cfg(target_os = "windows")]
 use std::path::PathBuf;
 
@@ -18,6 +18,7 @@ pub struct FileOptions {
     jpg: Option<String>,
     svg: Option<String>,
     sh: Option<String>,
+    toml: Option<String>,
 }
 
 pub fn read_file_options() -> FileOptions {
@@ -43,8 +44,8 @@ pub fn read_file_options() -> FileOptions {
         }
     }
     FileOptions {
-        txt: None,      // notepad
-        pdf: None,      // start msedge 
+        txt: None,
+        pdf: None,
         mp4: None,
         mp3: None,
         c: None,
@@ -54,6 +55,7 @@ pub fn read_file_options() -> FileOptions {
         jpg: None,
         svg: None,
         sh: None,
+        toml: None,
     }
 }
 
@@ -115,6 +117,11 @@ pub fn handle_file_open(file: &PathBuf, options: FileOptions) {
                     execute_command(command, file);
                 }
             },
+            "toml" => {
+                if let Some(command) = options.toml {
+                    execute_command(command, file);
+                }
+            },
             _ => {}
         }
     } 
@@ -133,7 +140,7 @@ pub fn execute_command(command: String, file: &PathBuf) {
     let (cmd, mut args) = split_command(command);
     if let Some(file_path) = file.to_str() {
         args.push(String::from(file_path));
-        if let Err(err) = Command::new(cmd).args(args).spawn() {
+        if let Err(_err) = Command::new(cmd).args(args).spawn() {
             // Handle error
             // print!("Error during executing command: {}", err);
         }

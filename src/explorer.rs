@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::{path::PathBuf, process::Command};
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
     Frame,
@@ -166,9 +166,9 @@ impl Explorer {
             rows,
             [
                 // + 1 is for padding.
-                Constraint::Length(5),
-                Constraint::Min(50),
-                Constraint::Min(10),
+                Constraint::Length(8),
+                Constraint::Min(40),
+                Constraint::Min(8),
                 Constraint::Min(15),
             ],
         )
@@ -287,7 +287,11 @@ pub fn explorer_handle_enter(app: &mut App) {
             } else {
                 let mut file_path = PathBuf::from(app.path_field.input.value());
                 file_path.push(entry.name.clone());
-                handle_file_open(&file_path, app.explorer.file_open_options.clone());
+                if app.explorer.files[selected_idx].is_exec {
+                    let _ = Command::new(file_path).spawn();
+                } else {
+                    handle_file_open(&file_path, app.explorer.file_open_options.clone());
+                }
             }
         } else {}
     }
@@ -297,22 +301,20 @@ impl HandlesInput for Explorer {
         match event {
             Event::Key(key_event) => {
                 if key_event.kind == KeyEventKind::Press {
-                    if key_event.kind == KeyEventKind::Press {
-                        match key_event.code {
-                            KeyCode::Char('j') | KeyCode::Down => self.next_row(),
-                            KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
-                            KeyCode::Char('r') => {
-                                self.refresh(&self.root_path.clone(), self.include_hidden);
-                            }
-                            KeyCode::Delete => self.handle_delete(),
-                            KeyCode::Char('c') => self.handle_copy(),
-                            KeyCode::Char('v') => self.handle_paste(),
-                            KeyCode::Char('x') => {
-                                self.handle_copy();
-                                self.file_is_cut = true;
-                            }
-                            _ => {}
+                    match key_event.code {
+                        KeyCode::Char('j') | KeyCode::Down => self.next_row(),
+                        KeyCode::Char('k') | KeyCode::Up => self.previous_row(),
+                        KeyCode::Char('r') => {
+                            self.refresh(&self.root_path.clone(), self.include_hidden);
                         }
+                        KeyCode::Delete => self.handle_delete(),
+                        KeyCode::Char('c') => self.handle_copy(),
+                        KeyCode::Char('v') => self.handle_paste(),
+                        KeyCode::Char('x') => {
+                            self.handle_copy();
+                            self.file_is_cut = true;
+                        }
+                        _ => {}
                     }
                 }
             }
