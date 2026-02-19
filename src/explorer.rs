@@ -48,7 +48,8 @@ pub struct Explorer {
 
 impl FileEntry {
     fn ref_array(&self) -> [String; 4] {
-        let type_of_entry = format!("{:?}", self.e_type);
+        let type_of_entry: String;
+        if self.e_type == EntryType::Dir {type_of_entry = String::from(" 🖿 ")} else {type_of_entry = String::from(" 🗎 ")};
         [
             type_of_entry,
             self.name.clone(),
@@ -166,7 +167,7 @@ impl Explorer {
             rows,
             [
                 // + 1 is for padding.
-                Constraint::Length(8),
+                Constraint::Length(5),
                 Constraint::Min(40),
                 Constraint::Min(8),
                 Constraint::Min(15),

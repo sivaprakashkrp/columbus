@@ -6,7 +6,6 @@ use ratatui::{
     style::Stylize,
     widgets::{Block, BorderType, Paragraph},
 };
-use tui_dialog::centered_rect;
 use std::{env::current_dir, io, path::{Path, PathBuf}, sync::mpsc, thread::{self}};
 use strum::{EnumIter, IntoEnumIterator};
 
@@ -19,9 +18,9 @@ mod file_size_deps;
 mod path_field;
 mod quick_access;
 mod open_files;
-// mod dialog;
+mod log_panel;
 use crate::{
-    command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
+    command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, log_panel::LogPanel, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
@@ -51,6 +50,7 @@ pub struct App {
     drives: Drives,
     focus_on: CurrentWidget,
     include_hidden: bool,
+    log_panel: LogPanel,
 }
 
 #[derive(Debug, Parser)]
@@ -182,6 +182,7 @@ impl App {
             Constraint::Length(3),
             Constraint::Percentage(90),
             Constraint::Length(3),
+            Constraint::Length(1),
         ]);
         let vertical_split_areas = vertical_layout.split(frame.area());
 
@@ -233,10 +234,8 @@ impl App {
         // Rendering the quick access area
         self.quick_access.create_qa_entries_table(frame, quick_access_area);
 
-        // Rendering the Dialog Box
-        // let dialog_box = DialogBox::new(String::from("Hello World"));
-        // let dialog_box_area = centered_rect(frame.area(), 30, 20, 0, 0);
-        // dialog_box.render_dialog(frame, dialog_box_area);
+        // Rendering the Log Panel
+        self.log_panel.render_widget(frame, vertical_split_areas[3]);        
     }
 
     fn get_focused_widget(&mut self) -> &mut dyn HandlesInput {
@@ -316,6 +315,7 @@ fn main() -> io::Result<()> {
         drives: Drives::new(),
         focus_on: CurrentWidget::Explorer,
         include_hidden: cli.include_hidden,
+        log_panel: LogPanel::new(),
     };
 
     // Spawning a input thread
