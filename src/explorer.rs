@@ -220,7 +220,7 @@ impl Explorer {
         }
     }
 
-    fn handle_paste(&mut self) {
+    fn handle_paste(&mut self) -> Result<(), String> {
         if self.copy_src_path != None {
             match self.copied_item.clone() {
                 Some(file_type) => {
@@ -247,16 +247,16 @@ impl Explorer {
                             None => {}
                         }
                         if file_type.to_owned() == EntryType::File {
-                            if let Ok(_suc) = copy_file(&src_file_path, &paste_path) {
-                                // Handle success
+                            if let Err(_err) = copy_file(&src_file_path, &paste_path) {
+                                return Err(String::from("Paste Operation failed: File could not be pasted"))
                             }
                         } else {
-                            if let Ok(_suc) = copy_directory(&src_file_path, &paste_path) {
-                                // Handle success
+                            if let Err(_err) = copy_directory(&src_file_path, &paste_path) {
+                                return Err(String::from("Paste Operation failed: Directory could not be pasted"))
                             }
                         }
                         if self.file_is_cut == true {
-                            delete(&src_file_path, file_type.to_owned());
+                            delete(&src_file_path, file_type.to_owned())?;
                             self.file_is_cut = false;
                         }
                         self.refresh(&self.root_path.clone(), self.include_hidden);
@@ -265,15 +265,17 @@ impl Explorer {
                 None => {}
             }
         }
+        Ok(())
     }
 
-    fn handle_delete(&mut self) {
+    fn handle_delete(&mut self) -> Result<(), String> {
         if let Some(idx) = self.state.selected() {
             let mut file_path = self.root_path.clone();
             file_path = file_path.join(self.files[idx].name.clone());
-            delete(&file_path, self.files[idx].e_type.clone());
+            delete(&file_path, self.files[idx].e_type.clone())?;
         }
         self.refresh(&self.root_path.clone(), self.include_hidden);
+        Ok(())
     }
 }
 
@@ -298,7 +300,7 @@ pub fn explorer_handle_enter(app: &mut App) {
     }
 
 impl HandlesInput for Explorer {
-    fn handle_input(&mut self, event: Event) {
+    fn handle_input(&mut self, event: Event) -> Result<(), String> {
         match event {
             Event::Key(key_event) => {
                 if key_event.kind == KeyEventKind::Press {
@@ -308,9 +310,9 @@ impl HandlesInput for Explorer {
                         KeyCode::Char('r') => {
                             self.refresh(&self.root_path.clone(), self.include_hidden);
                         }
-                        KeyCode::Delete => self.handle_delete(),
+                        KeyCode::Delete => self.handle_delete()?,
                         KeyCode::Char('c') => self.handle_copy(),
-                        KeyCode::Char('v') => self.handle_paste(),
+                        KeyCode::Char('v') => self.handle_paste()?,
                         KeyCode::Char('x') => {
                             self.handle_copy();
                             self.file_is_cut = true;
@@ -321,5 +323,6 @@ impl HandlesInput for Explorer {
             }
             _ => {}
         }
+        Ok(())
     }
 }

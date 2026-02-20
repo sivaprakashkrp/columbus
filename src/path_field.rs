@@ -1,4 +1,4 @@
-use crossterm::event::{self, Event, KeyCode, KeyEventKind};
+use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
     Frame,
     layout::Rect,
@@ -8,7 +8,7 @@ use ratatui::{
 use std::path::PathBuf;
 use tui_input::{Input, InputRequest, backend::crossterm::EventHandler};
 
-use crate::{App, dependencies::{HandlesInput, InputMode}};
+use crate::{dependencies::{HandlesInput, InputMode}};
 
 #[derive(Debug, Default, Clone)]
 pub struct PathField {
@@ -71,7 +71,7 @@ impl PathField {
 }
 
 impl HandlesInput for PathField {
-    fn handle_input(&mut self, event: Event) {
+    fn handle_input(&mut self, event: Event) -> Result<(), String> {
         match event {
             Event::Key(key_event) => {
                 if key_event.kind == KeyEventKind::Press {
@@ -92,5 +92,6 @@ impl HandlesInput for PathField {
             }
             _ => {}
         }
+        Ok(())
     }
 }

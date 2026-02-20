@@ -157,7 +157,7 @@ fn get_drives() -> Vec<DriveEntry> {
 }
 
 impl HandlesInput for Drives {
-    fn handle_input(&mut self, event: Event) {
+    fn handle_input(&mut self, event: Event) -> Result<(), String> {
         match event {
             Event::Key(key_event) => {
                 if key_event.kind == KeyEventKind::Press {
@@ -175,5 +175,6 @@ impl HandlesInput for Drives {
             }
             _ => {}
         }
+        Ok(())
     }
 }

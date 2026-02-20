@@ -1,4 +1,4 @@
-use std::{fs, path::{Path, PathBuf}, process::exit};
+use std::{fs, path::{Path, PathBuf}};
 
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
@@ -201,7 +201,7 @@ pub fn update_qa_files(app: &mut App, file_name: String, path: PathBuf) {
     }
 }
 
-pub fn write_qa_data(app: &mut App) {
+pub fn write_qa_data(app: &mut App) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     let qa_path = PathBuf::from("D:\\Applications\\columbus\\qa_files.toml");
     #[cfg(target_os = "linux")]
@@ -221,20 +221,18 @@ pub fn write_qa_data(app: &mut App) {
     match toml::to_string(&to_write_str) {
         Ok(content) => {
             if let Err(_res) = fs::write(qa_path, content) {
-                // println!("{:?}", content);
-                println!("Error in writing qa data");
-                exit(1);
+                return Err(String::from("Error in writing qa data"));
             }
         },
         Err(err) => {
-            println!("Error in creating qa data to write, {err}");
-            exit(2);
+            return Err(String::from(format!("Error in creating qa data to write, {err}")));
         }
     }
+    Ok(())
 }
 
 impl HandlesInput for QuickAccess {
-    fn handle_input(&mut self, event: Event) {
+    fn handle_input(&mut self, event: Event) -> Result<(), String> {
         match event {
             Event::Key(key_event) => {
                 if key_event.kind == KeyEventKind::Press {
@@ -249,5 +247,6 @@ impl HandlesInput for QuickAccess {
             }
             _ => {}
         }
+        Ok(())
     }
 }

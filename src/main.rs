@@ -6,7 +6,7 @@ use ratatui::{
     style::Stylize,
     widgets::{Block, BorderType, Paragraph},
 };
-use std::{env::current_dir, io, path::{Path, PathBuf}, sync::mpsc, thread::{self}};
+use std::{env::current_dir, path::{Path, PathBuf}, sync::mpsc, thread::{self}};
 use strum::{EnumIter, IntoEnumIterator};
 
 mod command;
@@ -73,12 +73,14 @@ struct CLI {
 }
 
 impl App {
-    fn run(&mut self, terminal: &mut DefaultTerminal, rx: mpsc::Receiver<Event>) -> io::Result<()> {
+    fn run(&mut self, terminal: &mut DefaultTerminal, rx: mpsc::Receiver<Event>) -> Result<(), String> {
         while !self.exit {
             if let Ok(rec_event) = rx.recv() {
                 match rec_event {
                     Event::Key(key_event) => {
                         if key_event.kind == KeyEventKind::Press {
+                            // Clearing log output before handling the operation
+                            self.log_panel.clear_log();
                             match key_event.code {
                                 KeyCode::Tab => {
                                     focus_toggler(self);
@@ -123,13 +125,12 @@ impl App {
                                                 focus_to(self, CurrentWidget::Explorer);
                                             } else {}
                                         }
-                                        _ => {},
                                     }
                                     update_qa_files(self, String::from(PathBuf::from(self.path_field.input.value()).file_name().and_then(|name| name.to_str()).unwrap_or("default")), PathBuf::from(self.path_field.input.value()));
                                 },
                                 KeyCode::Char(':') => {
                                     if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
-                                        self.get_focused_widget().handle_input(rec_event);
+                                        self.get_focused_widget().handle_input(rec_event)?;
                                     } else {
                                         focus_to(self, CurrentWidget::CommandBar);
                                         self.command.input_mode = InputMode::Editing;
@@ -137,7 +138,7 @@ impl App {
                                 },
                                 KeyCode::Char('a') => {
                                     if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
-                                        self.get_focused_widget().handle_input(rec_event);
+                                        self.get_focused_widget().handle_input(rec_event)?;
                                     } else {
                                             focus_to(self, CurrentWidget::PathField);
                                             self.path_field.input_mode = InputMode::Editing;
@@ -145,7 +146,7 @@ impl App {
                                 },
                                 KeyCode::Backspace => {
                                     if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
-                                        self.get_focused_widget().handle_input(rec_event);
+                                        self.get_focused_widget().handle_input(rec_event)?;
                                     } else {
                                         let current_dir = PathBuf::from(self.path_field.input.value());
                                         if let Some(parent_dir) = current_dir.parent() {
@@ -157,21 +158,21 @@ impl App {
                                 }
                                 KeyCode::Char('q') => {
                                      if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
-                                        self.get_focused_widget().handle_input(rec_event);
+                                        self.get_focused_widget().handle_input(rec_event)?;
                                     } else {
                                         self.exit_app();
                                     }
                                 },
-                                _ => self.get_focused_widget().handle_input(rec_event),
+                                _ => self.get_focused_widget().handle_input(rec_event)?,
                             }
                         } else {
-                            self.get_focused_widget().handle_input(rec_event);
+                            self.get_focused_widget().handle_input(rec_event)?;
                         }
                     }
-                    _ => self.get_focused_widget().handle_input(rec_event),
+                    _ => self.get_focused_widget().handle_input(rec_event)?,
                 }
             }
-            terminal.draw(|frame| self.draw(frame))?;
+            terminal.draw(|frame| self.draw(frame)).expect("Unable to draw to the terminal");
         }
         Ok(())
     }
@@ -252,47 +253,14 @@ impl App {
     }
 
     fn exit_app(&mut self) {
-        write_qa_data(self);
+        if let Err(err) = write_qa_data(self) {
+            self.log_panel.set_log(err);
+        }
         self.exit = true;
     }
 }
 
-// impl Widget for &App {
-//     fn render(self, area: ratatui::prelude::Rect, buf: &mut ratatui::prelude::Buffer) where Self: Sized {
-//
-
-//         // Rendering the Title
-//         Paragraph::new("COLUMBUS").centered().block(Block::bordered().border_type(BorderType::Rounded)).bold().cyan().render(title, buf);
-
-//         // Rendering the Path Bar
-//         //let path_text = Line::from(format!("Path: {}", self.path));
-//         //Paragraph::new(path_text).block(Block::bordered().border_type(BorderType::Rounded)).render(path_bar, buf);
-//         // self.path_field.render(path_bar, buf, self.path_field);
-
-//         // Rendering the Quick-Access Area
-//         Block::bordered().border_type(BorderType::Rounded).title(" Quick Access ").render(quick_access_area, buf);
-
-//         // Rendering the drives Area
-//         Block::bordered().border_type(BorderType::Rounded).title(" Drives ").render(drive_area, buf);
-
-//         // Rendering Explorer Area
-//         Block::bordered().border_type(BorderType::Rounded).title(" Explorer ").render(explorer_area, buf);
-
-//         // Rendering Instructions
-//         let instructions = Line::from(vec![
-//             " <Tab>".blue().bold(),
-//             " Change Focus ".into(),
-//             "<H>".blue().bold(),
-//             " Detailed Help ".into(),
-//             "<Q>".blue().bold(),
-//             " Quit ".into(),
-//         ]).centered();
-//         Paragraph::new("Command: ").block(Block::bordered().border_type(BorderType::Rounded).title_bottom(instructions)).render(command_area, buf);
-
-//     }
-// }
-
-fn main() -> io::Result<()> {
+fn main() {
     let cli = CLI::parse();
 
     let mut current_path = match cli.path {
@@ -322,11 +290,11 @@ fn main() -> io::Result<()> {
     let (tx, rx) = mpsc::channel::<Event>();
     thread::spawn(move || handle_input_events(tx.clone()));
 
-    let app_result = app.run(&mut terminal, rx);
+    if let Err(err)  = app.run(&mut terminal, rx) {
+        app.log_panel.set_log(err);
+    }
 
     ratatui::restore();
-
-    app_result
 }
 
 fn handle_input_events(tx: mpsc::Sender<Event>) {

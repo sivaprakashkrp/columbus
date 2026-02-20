@@ -10,19 +10,6 @@ pub enum InputMode {
     Editing,
 }
 
-// pub trait FocusableWidget {
-//     fn on_focus(&self) -> bool;
-// }
-
-// pub fn render_widget(frame: &mut Frame, widget: impl Widget + FocusableWidget, area: Rect) {
-//     let mut cont_block = Block::bordered().border_type(BorderType::Rounded);
-//     if widget.on_focus() {
-//         cont_block = cont_block.border_style(Color::Cyan);
-//     }
-//     frame.render_widget(&cont_block, area);
-//     frame.render_widget(widget, cont_block.inner(area));
-// }
-
 pub fn focus_toggler(app: &mut App) {
     match app.focus_on {
         CurrentWidget::CommandBar => {
@@ -50,7 +37,7 @@ pub fn focus_to(app: &mut App, widg: CurrentWidget) {
 }
 
 pub trait HandlesInput {
-    fn handle_input(&mut self, event: crossterm::event::Event);
+    fn handle_input(&mut self, event: crossterm::event::Event) -> Result<(), String>;
 }
 
 pub fn copy_file(src: &PathBuf, dest: &PathBuf) -> Result<u64, String> {
@@ -73,10 +60,11 @@ pub fn copy_directory(src: &PathBuf, dest: &PathBuf) -> Result<(), String> {
     }
 }
 
-pub fn delete(file_path: &PathBuf, file_type: EntryType) {
+pub fn delete(file_path: &PathBuf, file_type: EntryType) -> Result<(), String> {
     if file_type == EntryType::Dir {
-        if let Ok(_suc) = remove_dir_all(&file_path) {};
+        if let Err(err) = remove_dir_all(&file_path) {return Err(format!("Directory could not be deleted: {err}"))};
     } else if file_type == EntryType::File {
-        if let Ok(_suc) = remove_file(file_path) {};
+        if let Err(err) = remove_file(file_path) {return Err(format!("File could not be deleted: {err}"))};
     }
+    Ok(())
 }

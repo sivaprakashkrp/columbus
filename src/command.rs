@@ -1,4 +1,4 @@
-use std::{fs::{self, File, create_dir_all}, path::PathBuf, thread::sleep, time::Duration};
+use std::{fs::{self, File, create_dir_all}, path::PathBuf};
 
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{Frame, layout::Rect, style::{Color, Style, Stylize}, text::{Line}, widgets::{Block, Paragraph}};
@@ -87,7 +87,6 @@ pub fn handle_command_enter(app: &mut App) {
                 app.command.set_value(String::from("The file was created successfully"));
             }
             app.explorer.refresh(&dir_path, app.include_hidden);
-            sleep(Duration::from_secs(1));
             app.command.input.reset();},
         "b" => {
             let dir_path = PathBuf::from(app.path_field.input.value());
@@ -99,16 +98,18 @@ pub fn handle_command_enter(app: &mut App) {
                 app.command.set_value(String::from("The Directory was created successfully"));
             }
             app.explorer.refresh(&dir_path, app.include_hidden);
-            sleep(Duration::from_secs(1));
             app.command.input.reset();
         },
         "r" => {
             let root = PathBuf::from(app.path_field.input.value());
             let src = root.join(split_cmd[1]);
             let dest = root.join(split_cmd[2]);
-            if let Ok(_suc) = fs::rename(src, dest) {};
+            if src.exists() {
+                if let Err(_err) = fs::rename(src, dest) {app.log_panel.set_log(String::from("Rename operation failed"));};
+            } else {
+                app.log_panel.set_log(String::from("File to rename not found"));
+            }
             app.explorer.refresh(&root, app.include_hidden);
-            sleep(Duration::from_secs(1));
             app.command.input.reset();
         },
         "term" => {
@@ -117,18 +118,24 @@ pub fn handle_command_enter(app: &mut App) {
                     .args(["/C", "start cmd /K"])
                     .current_dir(app.path_field.input.value())
                     .spawn();
-                if let Ok(_child) = result {} else {}
+                if let Err(_child) = result {
+                    app.log_panel.set_log(String::from("Terminal Window cannot be created."));
+                }
             } else if cfg!(target_os = "macos") {
                 let result = std::process::Command::new("sh")
                     .args(["-c"])
                     .arg(format!("cd {} && $TERM", app.path_field.input.value()))
                     .spawn();
-                if let Ok(_child) = result {} else {}
+                if let Err(_child) = result {
+                    app.log_panel.set_log(String::from("Terminal Window cannot be created."));
+                }
             } else {
                 let result = std::process::Command::new("xterm")
                     .args(["-e", "sh", "-c", &format!("cd {} && sh", app.path_field.input.value())])
                     .spawn();
-                if let Ok(_child) = result {} else {}
+                if let Err(_child) = result {
+                    app.log_panel.set_log(String::from("Terminal Window cannot be created."));
+                }
             }
         },
         "exit" | "q" | "quit" => app.exit_app(),
@@ -138,7 +145,7 @@ pub fn handle_command_enter(app: &mut App) {
 }
 
 impl HandlesInput for Command {
-    fn handle_input(&mut self, event: Event) {
+    fn handle_input(&mut self, event: Event) -> Result<(), String> {
         match event {
             Event::Key(key_event) => {
                 if key_event.kind == KeyEventKind::Press {
@@ -160,5 +167,6 @@ impl HandlesInput for Command {
             }
             _ => {}
         }
+        Ok(())
     }
 }
