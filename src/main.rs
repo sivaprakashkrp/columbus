@@ -1,10 +1,7 @@
 use clap::Parser;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
-    DefaultTerminal, Frame,
-    layout::{Constraint, Direction, Layout},
-    style::Stylize,
-    widgets::{Block, BorderType, Paragraph},
+    DefaultTerminal, Frame, layout::{Constraint, Direction, Layout, Rect}, style::Stylize, widgets::{Block, BorderType, Paragraph}
 };
 use std::{env::current_dir, path::{Path, PathBuf}, sync::mpsc, thread::{self}};
 use strum::{EnumIter, IntoEnumIterator};
@@ -19,8 +16,9 @@ mod path_field;
 mod quick_access;
 mod open_files;
 mod log_panel;
+mod help_overview;
 use crate::{
-    command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, log_panel::LogPanel, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
+    command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, help_overview::HelpOverview, log_panel::LogPanel, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
@@ -51,6 +49,8 @@ pub struct App {
     focus_on: CurrentWidget,
     include_hidden: bool,
     log_panel: LogPanel,
+    help_overview: HelpOverview,
+    help_shown: bool,
 }
 
 #[derive(Debug, Parser)]
@@ -81,89 +81,99 @@ impl App {
                         if key_event.kind == KeyEventKind::Press {
                             // Clearing log output before handling the operation
                             self.log_panel.clear_log();
-                            match key_event.code {
-                                KeyCode::Tab => {
-                                    focus_toggler(self);
-                                    self.focus_on = self.focus_on.next();
-                                    focus_toggler(self);
-                                },
-                                KeyCode::Enter => {
-                                    match self.focus_on {
-                                        CurrentWidget::PathField => {
-                                            let mut input_path = PathBuf::from(self.path_field.input.value());
-                                            if input_path.exists() {
-                                                if !input_path.is_dir() {
-                                                    input_path = PathBuf::from(input_path.parent().unwrap_or(Path::new(".")));
-                                                }
-                                                self.path_field.set_value(String::from(input_path.to_string_lossy()));
-                                                self.explorer.refresh(&input_path, self.include_hidden);
-                                                focus_to(self, CurrentWidget::Explorer);
-                                            }
-                                        },
-                                        CurrentWidget::Explorer => {
-                                            explorer_handle_enter(self);
-                                        }
-                                        CurrentWidget::Drives => {
-                                            if let Some(selected_idx) = self.drives.state.selected() {
-                                                let entry = &self.drives.drives[selected_idx];
-                                                let dir_path = PathBuf::from(entry.mount_point.clone());
-                                                self.path_field.set_value(String::from(dir_path.to_string_lossy()));
-                                                self.explorer.refresh(&dir_path, self.include_hidden);
-                                                focus_to(self, CurrentWidget::Explorer);
-                                            } else {}
-                                        },
-                                        CurrentWidget::CommandBar => {
-                                            handle_command_enter(self);
-                                        },
-                                        CurrentWidget::QuickAccess => {
-                                            if let Some(selected_idx) = self.quick_access.state.selected() {
-                                                let entry = &self.quick_access.entries[selected_idx];
-                                                let dir_path = PathBuf::from(entry.path.clone());
-                                                self.path_field.set_value(String::from(dir_path.to_string_lossy()));
-                                                self.explorer.refresh(&dir_path, self.include_hidden);
-                                                self.quick_access.state.select(Some(0));
-                                                focus_to(self, CurrentWidget::Explorer);
-                                            } else {}
-                                        }
-                                    }
-                                    update_qa_files(self, String::from(PathBuf::from(self.path_field.input.value()).file_name().and_then(|name| name.to_str()).unwrap_or("default")), PathBuf::from(self.path_field.input.value()));
-                                },
-                                KeyCode::Char(':') => {
-                                    if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
-                                        self.get_focused_widget().handle_input(rec_event)?;
-                                    } else {
-                                        focus_to(self, CurrentWidget::CommandBar);
-                                        self.command.input_mode = InputMode::Editing;
-                                    }
-                                },
-                                KeyCode::Char('a') => {
-                                    if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
-                                        self.get_focused_widget().handle_input(rec_event)?;
-                                    } else {
-                                            focus_to(self, CurrentWidget::PathField);
-                                            self.path_field.input_mode = InputMode::Editing;
-                                    }
-                                },
-                                KeyCode::Backspace => {
-                                    if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
-                                        self.get_focused_widget().handle_input(rec_event)?;
-                                    } else {
-                                        let current_dir = PathBuf::from(self.path_field.input.value());
-                                        if let Some(parent_dir) = current_dir.parent() {
-                                            let parent_dir_str = String::from(parent_dir.to_string_lossy());
-                                            self.path_field.set_value(parent_dir_str);
-                                            self.explorer.refresh(&PathBuf::from(parent_dir), self.include_hidden);
-                                        } else {}
-                                    }
+                            if self.help_shown {
+                                match key_event.code {
+                                    KeyCode::Char('q') => self.help_shown = false,
+                                    KeyCode::Char('j') | KeyCode::Down => self.help_overview.scroll = if self.help_overview.scroll >= self.help_overview.max_scroll {self.help_overview.max_scroll} else {self.help_overview.scroll + 1},
+                                    KeyCode::Char('k') | KeyCode::Up => self.help_overview.scroll = self.help_overview.scroll.saturating_sub(1),
+                                    _ => (),
                                 }
-                                KeyCode::Char('q') => {
-                                     if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
-                                        self.get_focused_widget().handle_input(rec_event)?;
-                                    } else {
-                                        self.exit_app();
-                                    }
-                                },
-                                _ => self.get_focused_widget().handle_input(rec_event)?,
+                            } else {
+                                match key_event.code {
+                                    KeyCode::Tab => {
+                                        focus_toggler(self);
+                                        self.focus_on = self.focus_on.next();
+                                        focus_toggler(self);
+                                    },
+                                    KeyCode::Enter => {
+                                        match self.focus_on {
+                                            CurrentWidget::PathField => {
+                                                let mut input_path = PathBuf::from(self.path_field.input.value());
+                                                if input_path.exists() {
+                                                    if !input_path.is_dir() {
+                                                        input_path = PathBuf::from(input_path.parent().unwrap_or(Path::new(".")));
+                                                    }
+                                                    self.path_field.set_value(String::from(input_path.to_string_lossy()));
+                                                    self.explorer.refresh(&input_path, self.include_hidden);
+                                                    focus_to(self, CurrentWidget::Explorer);
+                                                }
+                                            },
+                                            CurrentWidget::Explorer => {
+                                                explorer_handle_enter(self);
+                                            }
+                                            CurrentWidget::Drives => {
+                                                if let Some(selected_idx) = self.drives.state.selected() {
+                                                    let entry = &self.drives.drives[selected_idx];
+                                                    let dir_path = PathBuf::from(entry.mount_point.clone());
+                                                    self.path_field.set_value(String::from(dir_path.to_string_lossy()));
+                                                    self.explorer.refresh(&dir_path, self.include_hidden);
+                                                    focus_to(self, CurrentWidget::Explorer);
+                                                } else {}
+                                            },
+                                            CurrentWidget::CommandBar => {
+                                                handle_command_enter(self);
+                                            },
+                                            CurrentWidget::QuickAccess => {
+                                                if let Some(selected_idx) = self.quick_access.state.selected() {
+                                                    let entry = &self.quick_access.entries[selected_idx];
+                                                    let dir_path = PathBuf::from(entry.path.clone());
+                                                    self.path_field.set_value(String::from(dir_path.to_string_lossy()));
+                                                    self.explorer.refresh(&dir_path, self.include_hidden);
+                                                    self.quick_access.state.select(Some(0));
+                                                    focus_to(self, CurrentWidget::Explorer);
+                                                } else {}
+                                            }
+                                        }
+                                        update_qa_files(self, String::from(PathBuf::from(self.path_field.input.value()).file_name().and_then(|name| name.to_str()).unwrap_or("default")), PathBuf::from(self.path_field.input.value()));
+                                    },
+                                    KeyCode::Char(':') => {
+                                        if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
+                                            self.get_focused_widget().handle_input(rec_event)?;
+                                        } else {
+                                            focus_to(self, CurrentWidget::CommandBar);
+                                            self.command.input_mode = InputMode::Editing;
+                                        }
+                                    },
+                                    KeyCode::Char('a') => {
+                                        if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
+                                            self.get_focused_widget().handle_input(rec_event)?;
+                                        } else {
+                                                focus_to(self, CurrentWidget::PathField);
+                                                self.path_field.input_mode = InputMode::Editing;
+                                        }
+                                    },
+                                    KeyCode::Backspace => {
+                                        if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
+                                            self.get_focused_widget().handle_input(rec_event)?;
+                                        } else {
+                                            let current_dir = PathBuf::from(self.path_field.input.value());
+                                            if let Some(parent_dir) = current_dir.parent() {
+                                                let parent_dir_str = String::from(parent_dir.to_string_lossy());
+                                                self.path_field.set_value(parent_dir_str);
+                                                self.explorer.refresh(&PathBuf::from(parent_dir), self.include_hidden);
+                                            } else {}
+                                        }
+                                    },
+                                    KeyCode::Char('h') => self.help_shown = true,
+                                    KeyCode::Char('q') => {
+                                        if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
+                                            self.get_focused_widget().handle_input(rec_event)?;
+                                        } else {
+                                            self.exit_app();
+                                        }
+                                    },
+                                    _ => self.get_focused_widget().handle_input(rec_event)?,
+                                }
                             }
                         } else {
                             self.get_focused_widget().handle_input(rec_event)?;
@@ -236,7 +246,21 @@ impl App {
         self.quick_access.create_qa_entries_table(frame, quick_access_area);
 
         // Rendering the Log Panel
-        self.log_panel.render_widget(frame, vertical_split_areas[3]);        
+        self.log_panel.render_widget(frame, vertical_split_areas[3]);      
+
+        // Conditionally rendering the help overview
+        if self.help_shown {
+            let area = frame.area();
+
+            let help_popup_area = Rect {
+                x: area.width / 10,
+                y: area.height / 10,
+                width: (0.8 * area.width as f32) as u16,
+                height: (0.8 * area.height as f32) as u16,
+            };
+
+            self.help_overview.render(help_popup_area, frame.buffer_mut());
+        }
     }
 
     fn get_focused_widget(&mut self) -> &mut dyn HandlesInput {
@@ -284,6 +308,8 @@ fn main() {
         focus_on: CurrentWidget::Explorer,
         include_hidden: cli.include_hidden,
         log_panel: LogPanel::new(),
+        help_overview: HelpOverview::new(),
+        help_shown: false,
     };
 
     // Spawning a input thread
