@@ -21,20 +21,29 @@ pub struct FileOptions {
     toml: Option<String>,
 }
 
-pub fn read_file_options() -> FileOptions {
-    #[cfg(target_os = "windows")]
-    let config_path = PathBuf::from("D:\\Applications\\columbus\\file_options.toml");
-    #[cfg(target_os = "linux")]
-    {
-        use std::env;
+pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
+    let config_path = match config_path {
+        Some(input_config_path ) => input_config_path,
+        None => {
+            #[cfg(target_os = "windows")]
+            {
+                PathBuf::from("D:\\Applications\\columbus\\file_options.toml")
+            }
+            #[cfg(target_os = "linux")]
+            {
+                use std::env;
 
-        let mut config_path: PathBuf;
+                let mut file_config_path: PathBuf;
 
-        if let Ok(home_path) = env::var_os("HOME") {
-            config_path = PathBuf::from(home_path);
-            config_path.push(".config/columbus/file_options.toml");
+                if let Ok(home_path) = env::var_os("HOME") {
+                    file_config_path = PathBuf::from(home_path);
+                    file_config_path.push(".config/columbus/file_options.toml");
+                }
+                file_config_path
+            }
         }
-    }
+    };
+    
     if config_path.exists() {
         if let Ok(contents) = fs::read_to_string(&config_path) {
             let file_res: Result<FileOptions, Error> = toml::from_str(&contents);

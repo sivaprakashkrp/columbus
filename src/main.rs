@@ -58,7 +58,8 @@ pub struct App {
     version,
     author,
     about = "A TUI File Explorer",
-    long_about = "<Long About Comes here>",
+    long_about = "A TUI File Explorer written in Rust using Ratatui.\n\nFor Help about keybindings and commands that can be used within columbus, press <H> in the app to open Help Overview.\n\nYou can also refer to the repository at https://github.com/sivaprakashkrp/columbus for more details and help.\n\nIf you encounter any issues, please report them at the Github page of as mentioned above.\n\nEnjoy exploring with columbus!!\n
+    ",
     help_template = "{bin} {version}\nDeveloped By: {author}\n\n{about}\n\nUsage:\n\t{usage}\n\n{all-args}",
     author = "Sivaprakash P"
 )]
@@ -70,6 +71,12 @@ struct CLI {
         help = "Includes hidden files and folders"
     )]
     include_hidden: bool,
+    #[arg(
+        short = 'c',
+        long = "config",
+        help = "Path to file_options.toml file"
+    )]
+    file_options_path: Option<PathBuf>,
 }
 
 impl App {
@@ -228,11 +235,9 @@ impl App {
         );
 
         // Rendering the PathField Widget
-        // render_widget(frame, &self.path_field, path_bar);
         self.path_field.render_input(frame, path_bar);
 
         // Rendering the Command area
-        // render_widget(frame, &self.command, vertical_split_areas[2]);
         self.command.render_input(frame, vertical_split_areas[2]);
 
         // Rendering the explorer area
@@ -303,7 +308,7 @@ fn main() {
         quick_access: QuickAccess::new(),
         path_field: PathField::new(&current_path),
         command: Command::new(),
-        explorer: Explorer::new(&current_path, cli.include_hidden),
+        explorer: Explorer::new(&current_path, cli.file_options_path,cli.include_hidden),
         drives: Drives::new(),
         focus_on: CurrentWidget::Explorer,
         include_hidden: cli.include_hidden,
