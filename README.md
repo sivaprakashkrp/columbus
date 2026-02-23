@@ -138,7 +138,7 @@ The `log` field is present in the bottom of the screen. This is to log any error
 
 ## Configuration files
 
-`columbus` depends on `file_options.toml` configuration file opening files. Hence absence of `file_options.toml` means you cannot open any file through `columbus`.
+`columbus` depends on `file_options.toml` configuration file for opening files. Hence absence of `file_options.toml` means you cannot open any file through `columbus`.
 
 `file_options.toml` is searched for in `D:\Applications\columbus\file_options.toml` location in **Windows**.
 
@@ -162,23 +162,23 @@ jpg = "cmd /c start "
 png = "cmd /c start "
 ```
 
-This is in correspondence to the `struct`:
-```rust
-pub struct FileOptions {
-    txt: Option<String>,
-    pdf: Option<String>,
-    mp4: Option<String>,
-    mp3: Option<String>,
-    c: Option<String>,
-    cpp: Option<String>,
-    rs: Option<String>,
-    png: Option<String>,
-    jpg: Option<String>,
-    svg: Option<String>,
-    sh: Option<String>,
-    toml: Option<String>,
-}
-```
+This is in correspondence to the `struct` `FileOptions` in `/src/open_files.rs`.
+
+The list of file extenstions for which open on enter works is:
+
+|Supported|File|Extensions|
+|---|---|---|
+| txt   | toml  | java  |
+| pdf   | html  | kt    |
+| mp4   | css   | json  |
+| mp3   | js    | zig   |
+| c | gitignore | odin  |
+| cpp   | ts    |   |
+| rs    | tsx   |   |
+| png   | py    |   |
+| jpg   | md    |   |
+| svg   | jsx   |   |
+| sh    | rb    |   |
 
 The order of the entries do not matter. Provide the command in such a way that it can be seperated into two parts `command` and the `arguments list`. The `FILEPATH` will be added to the last of the arguments list. 
 

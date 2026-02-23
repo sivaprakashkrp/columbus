@@ -19,6 +19,21 @@ pub struct FileOptions {
     svg: Option<String>,
     sh: Option<String>,
     toml: Option<String>,
+    html: Option<String>,
+    css: Option<String>,
+    js: Option<String>,
+    jsx: Option<String>,
+    ts: Option<String>,
+    tsx: Option<String>,
+    py: Option<String>,
+    md: Option<String>,
+    gitignore: Option<String>,
+    rb: Option<String>,
+    java: Option<String>,
+    kt: Option<String>,
+    json: Option<String>,
+    zig: Option<String>,
+    odin: Option<String>,
 }
 
 pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
@@ -65,6 +80,21 @@ pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
         svg: None,
         sh: None,
         toml: None,
+        html: None,
+        css: None,
+        js: None,
+        jsx: None,
+        ts: None,
+        tsx: None,
+        py: None,
+        md: None,
+        gitignore: None,
+        rb: None,
+        java: None,
+        kt: None,
+        json: None,
+        zig: None,
+        odin: None,
     }
 }
 
@@ -123,6 +153,81 @@ pub fn handle_file_open(file: &PathBuf, options: FileOptions) {
             },
             "sh" => {
                 if let Some(command) = options.sh {
+                    execute_command(command, file);
+                }
+            },
+            "html" => {
+                if let Some(command) = options.html {
+                    execute_command(command, file);
+                }
+            },
+            "css" => {
+                if let Some(command) = options.css {
+                    execute_command(command, file);
+                }
+            },
+            "js" => {
+                if let Some(command) = options.js {
+                    execute_command(command, file);
+                }
+            },
+            "jsx" => {
+                if let Some(command) = options.jsx {
+                    execute_command(command, file);
+                }
+            },
+            "ts" => {
+                if let Some(command) = options.ts {
+                    execute_command(command, file);
+                }
+            },
+            "tsx" => {
+                if let Some(command) = options.tsx {
+                    execute_command(command, file);
+                }
+            },
+            "md" => {
+                if let Some(command) = options.md {
+                    execute_command(command, file);
+                }
+            },
+            "py" => {
+                if let Some(command) = options.py {
+                    execute_command(command, file);
+                }
+            },
+            "java" => {
+                if let Some(command) = options.java {
+                    execute_command(command, file);
+                }
+            },
+            "kt" => {
+                if let Some(command) = options.kt {
+                    execute_command(command, file);
+                }
+            },
+            "odin" => {
+                if let Some(command) = options.odin {
+                    execute_command(command, file);
+                }
+            },
+            "zig" => {
+                if let Some(command) = options.zig {
+                    execute_command(command, file);
+                }
+            },
+            "gitignore" => {
+                if let Some(command) = options.gitignore {
+                    execute_command(command, file);
+                }
+            },
+            "rb" => {
+                if let Some(command) = options.rb {
+                    execute_command(command, file);
+                }
+            },
+            "json" => {
+                if let Some(command) = options.json {
                     execute_command(command, file);
                 }
             },
