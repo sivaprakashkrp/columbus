@@ -171,7 +171,13 @@ impl App {
                                             } else {}
                                         }
                                     },
-                                    KeyCode::Char('h') => self.help_shown = true,
+                                    KeyCode::Char('h') => {
+                                        if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
+                                            self.get_focused_widget().handle_input(rec_event)?;
+                                        } else {
+                                            self.help_shown = true;
+                                        }
+                                    },
                                     KeyCode::Char('q') => {
                                         if self.focus_on == CurrentWidget::CommandBar && self.command.input_mode == InputMode::Editing  || self.focus_on == CurrentWidget::PathField && self.path_field.input_mode == InputMode::Editing {
                                             self.get_focused_widget().handle_input(rec_event)?;
