@@ -92,6 +92,10 @@ columbus [OPTIONS] [<PATH>]
 * `j | k` -> Up / Down selection
 * `Enter` -> Navigate into the selected Folder
 
+### Help Overview
+* `j | k` -> Up / Down Navigation
+* `q` -> Close Help Overview
+
 ## The Command Bar
 
 A trial implementation of a command parsing widget in `columbus`. It provides commands to create new files, directories and many more. The commands that have been implemented as of now are:

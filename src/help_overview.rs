@@ -52,7 +52,7 @@ impl HelpOverview {
             
             Drives Explorer
             ---------------
-            \tj | k ->  Up / Down selection
+            \tj | k ->  Up / Down Selection
             \tEnter ->  Navigate into the selected drive
             \tr ->      Refresh the drives menu
 
@@ -64,7 +64,7 @@ impl HelpOverview {
 
             Quick Access
             ------------
-            \tj | k -> Up / Down selection
+            \tj | k -> Up / Down Selection
             \tEnter -> Navigate into the selected Folder
 
             Commands for Command Bar
@@ -72,6 +72,11 @@ impl HelpOverview {
             \tCreate a new file:        n <FILENAME>
             \tCreate a new directory:   b <DIRECTORY NAME>
             \tRename Operation:         r <OLD_EXISTING_NAME> <NEW_NAME>
+
+            Help Overview
+            -------------
+            \tj | k -> Up / Down Navigation
+            \tq -> Close Help Overview
 
             INFORMATION
             -----------
