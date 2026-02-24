@@ -1,5 +1,7 @@
 # `columbus`
 
+[![Crates.io](https://img.shields.io/crates/v/columbus.svg)](https://crates.io/crates/columbus)
+
 ![The current state of Columbus](./images/columbus-sample.png)
 
 A Terminal User Interface(TUI) file explorer created in `Ratatui` and `Rust`.
@@ -21,21 +23,27 @@ A Terminal User Interface(TUI) file explorer created in `Ratatui` and `Rust`.
 
 ## Installation
 
-<!-- ### With Cargo
+### With Cargo
+`columbus` is now available in [crates.io](https://crates.io/crates/columbus). You can now install `columbus` from `cargo` with the command:
+```bash
+cargo install columbus
+```
 
-
-### From AUR -->
-
+<!-- ### From AUR -->
 
 ### Building from source
 
-Clone the repository and `cd` into it. Run the command
+Clone the repository and `cd` into it. 
+
+You can also refer to the archives provided in the **Releases** section of the project for source code at the time of release. If you are using the archive, extract it and `cd` into the extracted directory. 
+
+Run the command
 
 ```bash
 cargo build --release
 ```
 
-To build a release in `<PATH_TO_REPO>/target/release` folder. You can find an executable file called `columbus`. You can add `<PATH_TO_REPO>/target/release` to your system's `PATH` variable or move the executable to some other already added path.
+This will build a release in `<PATH_TO_REPO>/target/release` folder. You can find an executable file called `columbus` there. You can add `<PATH_TO_REPO>/target/release` to your system's `PATH` variable or move the executable to some other already added path to use `columbus` in your terminal from anywhere in your system.
 
 ## Usage
 
