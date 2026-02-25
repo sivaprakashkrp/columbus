@@ -44,10 +44,10 @@ pub fn copy_file(src: &PathBuf, dest: &PathBuf) -> Result<u64, String> {
     if let Ok(_success) = fs::copy(src, dest) {
         Ok(_success)
     } else {
-        Err(String::from(format!(
+        Err(format!(
             "Error in copying file {}",
             src.to_str().unwrap()
-        )))
+        ))
     }
 }
 

@@ -37,6 +37,18 @@ impl CurrentWidget {
         let next_index = (current_index + 1) % variants.len();
         variants[next_index]
     }
+
+    fn previous(&self) -> Self {
+        let variants: Vec<CurrentWidget> = CurrentWidget::iter().collect();
+        let current_index = variants.iter().position(|&v| v == *self).unwrap();
+        let next_index;
+        if current_index == 0 {
+            next_index = variants.len() -1;
+        } else {
+            next_index = (current_index - 1) % variants.len();
+        }
+        variants[next_index]
+    }
 }
 
 pub struct App {
@@ -102,6 +114,11 @@ impl App {
                                         self.focus_on = self.focus_on.next();
                                         focus_toggler(self);
                                     },
+                                    KeyCode::BackTab => {
+                                        focus_toggler(self);
+                                        self.focus_on = self.focus_on.previous();
+                                        focus_toggler(self);
+                                    }
                                     KeyCode::Enter => {
                                         match self.focus_on {
                                             CurrentWidget::PathField => {
@@ -125,7 +142,9 @@ impl App {
                                                     self.path_field.set_value(String::from(dir_path.to_string_lossy()));
                                                     self.explorer.refresh(&dir_path, self.include_hidden);
                                                     focus_to(self, CurrentWidget::Explorer);
-                                                } else {}
+                                                } else {
+                                                    self.log_panel.set_log(String::from("Error in retrieving the drives"));
+                                                }
                                             },
                                             CurrentWidget::CommandBar => {
                                                 handle_command_enter(self);
@@ -138,7 +157,9 @@ impl App {
                                                     self.explorer.refresh(&dir_path, self.include_hidden);
                                                     self.quick_access.state.select(Some(0));
                                                     focus_to(self, CurrentWidget::Explorer);
-                                                } else {}
+                                                } else {
+                                                    self.log_panel.set_log(String::from("Error in retrieving the Quick Access Files"));
+                                                }
                                             }
                                         }
                                         update_qa_files(self, String::from(PathBuf::from(self.path_field.input.value()).file_name().and_then(|name| name.to_str()).unwrap_or("default")), PathBuf::from(self.path_field.input.value()));
@@ -168,7 +189,9 @@ impl App {
                                                 let parent_dir_str = String::from(parent_dir.to_string_lossy());
                                                 self.path_field.set_value(parent_dir_str);
                                                 self.explorer.refresh(&PathBuf::from(parent_dir), self.include_hidden);
-                                            } else {}
+                                            } else {
+                                                self.log_panel.set_log(String::from("Couldn't find the parent directory"));
+                                            }
                                         }
                                     },
                                     KeyCode::Char('h') => {

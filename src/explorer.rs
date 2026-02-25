@@ -96,11 +96,11 @@ impl Explorer {
         self.root_path = path.clone();
         if let Ok(data_vec) = get_data(path, include_hidden, false, false, false) {
             self.files = data_vec;
+            self.scroll_state = ScrollbarState::new((self.files.len() - 1) * ITEM_HEIGHT);
         } else {
             self.files = vec![];
         }
         self.state.select(Some(0));
-        self.scroll_state = self.scroll_state.position(0 * ITEM_HEIGHT);
     }
 
     pub fn next_row(&mut self) {
@@ -296,7 +296,7 @@ pub fn explorer_handle_enter(app: &mut App) {
                     handle_file_open(&file_path, app.explorer.file_open_options.clone());
                 }
             }
-        } else {}
+        }
     }
 
 impl HandlesInput for Explorer {

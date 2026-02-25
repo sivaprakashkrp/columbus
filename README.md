@@ -1,5 +1,6 @@
 # `columbus`
 
+[![Built With Ratatui](https://img.shields.io/badge/Built_With_Ratatui-000?logo=ratatui&logoColor=fff)](https://ratatui.rs/)
 [![Crates.io](https://img.shields.io/crates/v/columbus.svg)](https://crates.io/crates/columbus)
 
 ![The current state of Columbus](./images/columbus-sample.png)
@@ -63,6 +64,7 @@ columbus [OPTIONS] [<PATH>]
 * `a` -> Input mode in the Path Field
 * `:` -> Input mode in Command bar
 * `Tab` -> Used to cycle through the explorers and input fields
+* `Shift + Tab` -> Used to cycle through the explorers and input fields in the opposite direction
 * `q` -> Exits the app
 
 ### Explorer

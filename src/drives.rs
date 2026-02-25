@@ -108,7 +108,7 @@ impl Drives {
             };
             let item = data.ref_array();
             item.into_iter()
-                .map(|content| Cell::from(Text::from(format!("{content}"))))
+                .map(|content| Cell::from(Text::from(content.to_string())))
                 .collect::<Row>()
                 .style(Style::new().fg(Color::Cyan).bg(color))
                 .height(1)
