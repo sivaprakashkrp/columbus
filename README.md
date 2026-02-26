@@ -187,9 +187,9 @@ The list of file extenstions for which open on enter works is:
 | mp4   | css   | json  |
 | mp3   | js    | zig   |
 | c | gitignore | odin  |
-| cpp   | ts    |   |
-| rs    | tsx   |   |
-| png   | py    |   |
+| cpp   | ts    | odt  |
+| rs    | tsx   | mkv  |
+| png   | py    | avi  |
 | jpg   | md    |   |
 | svg   | jsx   |   |
 | sh    | rb    |   |

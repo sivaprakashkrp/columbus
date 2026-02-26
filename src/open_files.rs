@@ -34,6 +34,9 @@ pub struct FileOptions {
     json: Option<String>,
     zig: Option<String>,
     odin: Option<String>,
+    mkv: Option<String>,
+    avi: Option<String>,
+    odt: Option<String>,
 }
 
 pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
@@ -95,6 +98,9 @@ pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
         json: None,
         zig: None,
         odin: None,
+        mkv: None,
+        avi: None,
+        odt: None,    
     }
 }
 
@@ -233,6 +239,21 @@ pub fn handle_file_open(file: &PathBuf, options: FileOptions) {
             },
             "toml" => {
                 if let Some(command) = options.toml {
+                    execute_command(command, file);
+                }
+            },
+            "mkv" => {
+                if let Some(command) = options.mkv {
+                    execute_command(command, file);
+                }
+            },
+            "avi" => {
+                if let Some(command) = options.avi {
+                    execute_command(command, file);
+                }
+            },
+            "odt" => {
+                if let Some(command) = options.odt {
                     execute_command(command, file);
                 }
             },
