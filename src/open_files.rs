@@ -1,4 +1,4 @@
-use std::{fs, process::{Command}};
+use std::{fs, path::Path, process::Command};
 #[cfg(target_os = "windows")]
 use std::path::PathBuf;
 
@@ -104,7 +104,7 @@ pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
     }
 }
 
-pub fn handle_file_open(file: &PathBuf, options: FileOptions) {
+pub fn handle_file_open(file: &Path, options: FileOptions) {
     if let Some(file_ext) = file.extension() {
         match String::from(file_ext.to_string_lossy()).as_str() {
             "txt" => {
@@ -266,12 +266,12 @@ fn split_command(cmd: String) -> (String, Vec<String>) {
     let cmd_split: Vec<&str> = cmd.splitn(2, " ").collect();
     let mut args = vec![];
     if cmd_split.len() != 1 {
-        args = cmd_split[1].split(" ").map(|x| String::from(x)).collect();
+        args = cmd_split[1].split(" ").map(String::from).collect();
     }
-    return (String::from(cmd_split[0]), args);
+    (String::from(cmd_split[0]), args)
 }
 
-pub fn execute_command(command: String, file: &PathBuf) {
+pub fn execute_command(command: String, file: &Path) {
     let (cmd, mut args) = split_command(command);
     if let Some(file_path) = file.to_str() {
         args.push(String::from(file_path));

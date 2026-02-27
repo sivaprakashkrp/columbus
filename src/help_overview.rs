@@ -87,7 +87,7 @@ impl HelpOverview {
         // let content_span_tags = ;
         HelpOverview {
             title: String::from(" Help Overview "),
-            content: format!("{}", content_text),
+            content: content_text.to_string(),
             border_style: Style::new().cyan(),
             title_style: Style::new().cyan(),
             style: Style::default(),

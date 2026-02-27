@@ -5,7 +5,7 @@ use ratatui::{
     style::{Color, Style},
     widgets::{Block, Paragraph},
 };
-use std::path::PathBuf;
+use std::path::{Path};
 use tui_input::{Input, InputRequest, backend::crossterm::EventHandler};
 
 use crate::{dependencies::{HandlesInput, InputMode}};
@@ -20,7 +20,7 @@ pub struct PathField {
 }
 
 impl PathField {
-    pub fn new(path: &PathBuf) -> PathField {
+    pub fn new(path: &Path) -> PathField {
         PathField {
             input: Input::new(String::from(path.to_string_lossy())),
             input_mode: InputMode::Normal,

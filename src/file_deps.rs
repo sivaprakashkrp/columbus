@@ -21,7 +21,7 @@ fn get_files(path: &Path, directory_size: bool, byte_size: bool) -> Vec<FileEntr
 
 // To get the data about the files and directories in the given path
 pub fn get_data(path: &Path, all:bool, hiddenonly: bool, directory_size: bool, byte_size: bool) -> Result<Vec<FileEntry>, String> {
-    let mut get_files = get_files(&path, directory_size, byte_size);
+    let mut get_files = get_files(path, directory_size, byte_size);
     if hiddenonly {
         let get_files_iter: IntoIter<FileEntry> = get_files.into_iter();
         get_files = only_hidden(get_files_iter);
@@ -29,15 +29,15 @@ pub fn get_data(path: &Path, all:bool, hiddenonly: bool, directory_size: bool, b
         let get_files_iter: IntoIter<FileEntry> = get_files.into_iter();
         get_files = leave_hidden(get_files_iter);
     }
-    if get_files.len() == 0 {
+    if get_files.is_empty() {
         return Err(String::from("No Files or Directories found!"));
     }
-    return Ok(get_files);
+    Ok(get_files)
 }
 
 // To collect data about directories and map them into a vector so that they can be displayed in table
 fn map_dir_data(file: fs::DirEntry, data: &mut Vec<FileEntry>, dir_index: &mut usize, directory_size: bool, byte_size: bool) -> fs::DirEntry {
-    if let Ok(meta) = fs::metadata(&file.path()) {
+    if let Ok(meta) = fs::metadata(file.path()) {
         if meta.is_dir() {
             data.insert(*dir_index, FileEntry {
                 name: file
@@ -52,7 +52,7 @@ fn map_dir_data(file: fs::DirEntry, data: &mut Vec<FileEntry>, dir_index: &mut u
                 } else {
                     String::default()
                 },
-                hidden: is_hidden(&file.path()).unwrap_or(false),
+                hidden: is_hidden(file.path()).unwrap_or(false),
                 is_exec: file.path().is_executable(),
             });
             *dir_index += 1;
@@ -63,7 +63,7 @@ fn map_dir_data(file: fs::DirEntry, data: &mut Vec<FileEntry>, dir_index: &mut u
 
 // To collect data about files and map them into a vector so that they can be displayed in table
 fn map_file_data(file: fs::DirEntry, data: &mut Vec<FileEntry>, byte_size: bool) {
-    if let Ok(meta) = fs::metadata(&file.path()) {
+    if let Ok(meta) = fs::metadata(file.path()) {
         if !meta.is_dir() {
             data.push(FileEntry {
                 name: file
@@ -78,7 +78,7 @@ fn map_file_data(file: fs::DirEntry, data: &mut Vec<FileEntry>, byte_size: bool)
                 } else {
                     String::default()
                 },
-                hidden: is_hidden(&file.path()).unwrap_or(false),
+                hidden: is_hidden(file.path()).unwrap_or(false),
                 is_exec: file.path().is_executable(),
             });
         }
@@ -95,11 +95,11 @@ fn map_data(file: fs::DirEntry, data: &mut Vec<FileEntry>, dir_index: &mut usize
 // To omit hidden files from the Vector
 fn leave_hidden<I>(data: I) -> Vec<FileEntry> where I: Iterator<Item = FileEntry> {
     let res: Vec<FileEntry> = data.filter(|x| !x.hidden).collect();
-    return res;
+    res
 }
 
 // To have only the hidden files in the Vector
 fn only_hidden<I>(data: I) -> Vec<FileEntry> where I: Iterator<Item = FileEntry> {
     let res: Vec<FileEntry> = data.filter(|x| x.hidden).collect();
-    return res;
+    res
 }

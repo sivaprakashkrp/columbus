@@ -320,7 +320,15 @@ impl HandlesInput for Explorer {
                         _ => {}
                     }
                 }
-            }
+            },
+            // Event::Mouse(mouse_event) => {
+            //     match mouse_event.kind {
+            //         MouseEventKind::Down(MouseButton::Left) => {
+                        
+            //         },
+            //         _ => (),
+            //     }
+            // }
             _ => {}
         }
         Ok(())

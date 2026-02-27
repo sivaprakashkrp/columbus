@@ -108,7 +108,7 @@ impl QuickAccess {
             };
             let item = data.ref_array();
             item.into_iter()
-                .map(|content| Cell::from(Text::from(format!("{content}"))))
+                .map(|content| Cell::from(Text::from(content.to_string())))
                 .collect::<Row>()
                 .style(Style::new().fg(Color::Cyan).bg(color))
                 .height(1)
@@ -193,7 +193,7 @@ pub fn update_qa_files(app: &mut App, file_name: String, path: PathBuf) {
         }
     }
     if flag {
-        if input_path.is_absolute() && input_path.parent().map_or(true, |p| p == input_path) {
+        if input_path.is_absolute() && input_path.parent().is_none_or(|p| p == input_path) {
             app.quick_access.entries.push(QAFileEntry { name: String::from(input_path.to_string_lossy()), path: input_path, count: 1 })
         } else {
             app.quick_access.entries.push(QAFileEntry { name: file_name.clone(), path: input_path, count: 1 })
@@ -225,7 +225,7 @@ pub fn write_qa_data(app: &mut App) -> Result<(), String> {
             }
         },
         Err(err) => {
-            return Err(String::from(format!("Error in creating qa data to write, {err}")));
+            return Err(format!("Error in creating qa data to write, {err}"));
         }
     }
     Ok(())

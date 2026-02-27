@@ -31,6 +31,7 @@ pub enum CurrentWidget {
 }
 
 impl CurrentWidget {
+    /// To select the next widget in the order -> Used to handle `TAB` Keyevent
     fn next(&self) -> Self {
         let variants: Vec<CurrentWidget> = CurrentWidget::iter().collect();
         let current_index = variants.iter().position(|&v| v == *self).unwrap();
@@ -38,15 +39,11 @@ impl CurrentWidget {
         variants[next_index]
     }
 
+    /// To select the previous widget in the order -> Used to handle `SHIFT + TAB` Key Event
     fn previous(&self) -> Self {
         let variants: Vec<CurrentWidget> = CurrentWidget::iter().collect();
         let current_index = variants.iter().position(|&v| v == *self).unwrap();
-        let next_index;
-        if current_index == 0 {
-            next_index = variants.len() -1;
-        } else {
-            next_index = (current_index - 1) % variants.len();
-        }
+        let next_index = if current_index == 0 { variants.len() -1 } else { (current_index - 1) % variants.len() };
         variants[next_index]
     }
 }
@@ -93,6 +90,9 @@ struct CLI {
 
 impl App {
     fn run(&mut self, terminal: &mut DefaultTerminal, rx: mpsc::Receiver<Event>) -> Result<(), String> {
+        // if let Err(err) = execute!(std::io::stdout(), EnableMouseCapture) {
+        //     return Err(format!("Error in capturing Mouse: {}", err));
+        // };
         while !self.exit {
             if let Ok(rec_event) = rx.recv() {
                 match rec_event {
@@ -138,7 +138,7 @@ impl App {
                                             CurrentWidget::Drives => {
                                                 if let Some(selected_idx) = self.drives.state.selected() {
                                                     let entry = &self.drives.drives[selected_idx];
-                                                    let dir_path = PathBuf::from(entry.mount_point.clone());
+                                                    let dir_path = entry.mount_point.clone();
                                                     self.path_field.set_value(String::from(dir_path.to_string_lossy()));
                                                     self.explorer.refresh(&dir_path, self.include_hidden);
                                                     focus_to(self, CurrentWidget::Explorer);
@@ -152,7 +152,7 @@ impl App {
                                             CurrentWidget::QuickAccess => {
                                                 if let Some(selected_idx) = self.quick_access.state.selected() {
                                                     let entry = &self.quick_access.entries[selected_idx];
-                                                    let dir_path = PathBuf::from(entry.path.clone());
+                                                    let dir_path = entry.path.clone();
                                                     self.path_field.set_value(String::from(dir_path.to_string_lossy()));
                                                     self.explorer.refresh(&dir_path, self.include_hidden);
                                                     self.quick_access.state.select(Some(0));
@@ -214,12 +214,28 @@ impl App {
                         } else {
                             self.get_focused_widget().handle_input(rec_event)?;
                         }
-                    }
+                    },
+                    // Event::Mouse(mouse_event) => {
+                    //     match mouse_event.kind {
+                    //         MouseEventKind::Down(MouseButton::Left) => {
+                    //             match self.focus_on {
+                    //                 CurrentWidget::Explorer => {
+
+                    //                 }
+                    //                 _ => (),
+                    //             }
+                    //         }
+                    //         _ => (),
+                    //     }
+                    // },
                     _ => self.get_focused_widget().handle_input(rec_event)?,
                 }
             }
             terminal.draw(|frame| self.draw(frame)).expect("Unable to draw to the terminal");
         }
+        // if let Err(err) = execute!(std::io::stdout(), DisableMouseCapture) {
+        //     return Err(format!("Error in releasing captured mouse: {}", err))
+        // };
         Ok(())
     }
 
@@ -307,7 +323,7 @@ impl App {
         } else if self.focus_on == CurrentWidget::QuickAccess {
             return &mut self.quick_access;
         }
-        return &mut self.explorer;
+        &mut self.explorer
     }
 
     fn exit_app(&mut self) {
