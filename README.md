@@ -202,6 +202,12 @@ The file opening mechanism is totally based on the commands provided by the user
 
 **NOTE:** DO NOT open other TUI applications from `columbus`. For such applications, please create a seperate terminal window.
 
+## Future Enhancements
+
+- [ ] Add Mouse Events to widgets
+- [ ] Add all types of file extensions for open on enter in explorer
+- [ ] Enable opening of TUI apps from columbus in the same terminal
+
 ---
 
 For any issues encounterd in `columbus` please post a Github issue in the repository. 

@@ -5,10 +5,7 @@ use ratatui::{
     layout::{Constraint, Margin, Rect},
     style::{Color, Modifier, Style, Stylize},
     text::Text,
-    widgets::{
-        Block, Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table,
-        TableState,
-    },
+    widgets::{Block, Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState},
 };
 
 use crate::{App, dependencies::delete, open_files::{FileOptions, handle_file_open, read_file_options}};
