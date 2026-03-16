@@ -93,6 +93,7 @@ impl App {
         // if let Err(err) = execute!(std::io::stdout(), EnableMouseCapture) {
         //     return Err(format!("Error in capturing Mouse: {}", err));
         // };
+        terminal.draw(|frame| self.draw(frame)).expect("Unable to draw to the terminal");
         while !self.exit {
             if let Ok(rec_event) = rx.recv() {
                 match rec_event {
