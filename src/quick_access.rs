@@ -1,5 +1,5 @@
 use std::{fs, path::{Path, PathBuf}};
-
+use std::env;
 use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
     Frame,
@@ -144,20 +144,17 @@ impl QuickAccess {
 }
 
 pub fn get_qa_files() -> Vec<QAFileEntry> {
-    #[cfg(target_os = "windows")]
-    let qa_path = PathBuf::from("D:\\Applications\\columbus\\qa_files.toml");
-    #[cfg(target_os = "linux")]
-    {
-        use std::env;
-
-        let mut qa_path: PathBuf;
-
-        if let Ok(home_path) = env::var_os("HOME") {
-            qa_path = PathBuf::from(home_path);
-            qa_path.push(".config/columbus/qa_files.toml");
-        }
-        
-    }
+    let mut qa_path: PathBuf = 
+        if cfg!(target_os = "windows") {
+            PathBuf::from("D:\\Applications")
+        } else {
+            if let Ok(home_path) = env::var("XDG_CONFIG_HOME") {
+                PathBuf::from(home_path)
+            } else {
+                PathBuf::from(".")
+            }
+        };
+    qa_path.push("columbus/qa_files.toml");
     
     if qa_path.exists() {
         if let Ok(contents) = fs::read_to_string(qa_path.clone()) {
@@ -202,19 +199,17 @@ pub fn update_qa_files(app: &mut App, file_name: String, path: PathBuf) {
 }
 
 pub fn write_qa_data(app: &mut App) -> Result<(), String> {
-    #[cfg(target_os = "windows")]
-    let qa_path = PathBuf::from("D:\\Applications\\columbus\\qa_files.toml");
-    #[cfg(target_os = "linux")]
-    {
-        use std::env;
-
-        let mut qa_path: PathBuf;
-
-        if let Ok(home_path) = env::var_os("HOME") {
-            qa_path = PathBuf::from(home_path);
-            qa_path.push(".config/columbus/qa_files.toml");
-        }
-    }
+    let mut qa_path: PathBuf =
+        if cfg!(target_os = "windows") {
+            PathBuf::from("D:\\Applications")
+        } else {
+            if let Ok(home_path) = env::var("XDG_CONFIG_HOME") {
+                PathBuf::from(home_path)
+            } else {
+                PathBuf::from(".")
+            }
+        };
+    qa_path.push("columbus/qa_files.toml");
 
     let to_write_str = StoredQAEntity { files: app.quick_access.entries.clone() };
 

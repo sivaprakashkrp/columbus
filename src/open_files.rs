@@ -1,7 +1,6 @@
 use std::{fs, path::Path, process::Command};
-#[cfg(target_os = "windows")]
 use std::path::PathBuf;
-
+use std::env;
 use serde::{Deserialize, Serialize};
 use toml::de::Error;
 
@@ -49,14 +48,13 @@ pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
             }
             #[cfg(target_os = "linux")]
             {
-                use std::env;
-
                 let mut file_config_path: PathBuf;
-
-                if let Ok(home_path) = env::var_os("HOME") {
+                if let Ok(home_path) = env::var("XDG_CONFIG_HOME") {
                     file_config_path = PathBuf::from(home_path);
-                    file_config_path.push(".config/columbus/file_options.toml");
+                } else {
+                    file_config_path = PathBuf::from(".");
                 }
+                file_config_path.push("columbus/file_options.toml");
                 file_config_path
             }
         }
