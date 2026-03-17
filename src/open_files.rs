@@ -36,6 +36,11 @@ pub struct FileOptions {
     mkv: Option<String>,
     avi: Option<String>,
     odt: Option<String>,
+    ods: Option<String>,
+    odp: Option<String>,
+    odg: Option<String>,
+    jpeg: Option<String>,
+    gif: Option<String>,
 }
 
 pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
@@ -99,6 +104,11 @@ pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
         mkv: None,
         avi: None,
         odt: None,    
+        ods: None,
+        odp: None,
+        odg: None,
+        jpeg: None,
+        gif: None,
     }
 }
 
@@ -252,6 +262,31 @@ pub fn handle_file_open(file: &Path, options: FileOptions) {
             },
             "odt" => {
                 if let Some(command) = options.odt {
+                    execute_command(command, file);
+                }
+            },
+            "ods" => {
+                if let Some(command) = options.ods {
+                    execute_command(command, file);
+                }
+            },
+            "odp" => {
+                if let Some(command) = options.odp {
+                    execute_command(command, file);
+                }
+            },
+            "odg" => {
+                if let Some(command) = options.odg {
+                    execute_command(command, file);
+                }
+            },
+            "jpeg" => {
+                if let Some(command) = options.jpeg {
+                    execute_command(command, file);
+                }
+            },
+            "gif" => {
+                if let Some(command) = options.gif {
                     execute_command(command, file);
                 }
             },

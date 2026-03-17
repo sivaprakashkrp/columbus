@@ -180,19 +180,19 @@ This is in correspondence to the `struct` `FileOptions` in `/src/open_files.rs`.
 
 The list of file extenstions for which open on enter works is:
 
-|Supported|File|Extensions|
-|---|---|---|
-| txt   | toml  | java  |
-| pdf   | html  | kt    |
-| mp4   | css   | json  |
-| mp3   | js    | zig   |
-| c | gitignore | odin  |
-| cpp   | ts    | odt  |
-| rs    | tsx   | mkv  |
-| png   | py    | avi  |
-| jpg   | md    |   |
-| svg   | jsx   |   |
-| sh    | rb    |   |
+| |File|Extensions| |
+|---|---|---|---|
+| txt   | toml  | java  | jpeg |
+| pdf   | html  | kt    | gif |
+| mp4   | css   | json  |  |
+| mp3   | js    | zig   |  |
+| c | gitignore | odin  |  |
+| cpp   | ts    | odt  |  |
+| rs    | tsx   | mkv  |  |
+| png   | py    | avi  |  |
+| jpg   | md    | odp |  |
+| svg   | jsx   | odg |  |
+| sh    | rb    | ods |  |
 
 The order of the entries do not matter. Provide the command in such a way that it can be seperated into two parts `command` and the `arguments list`. The `FILEPATH` will be added to the last of the arguments list. 
 
