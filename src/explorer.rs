@@ -276,25 +276,26 @@ impl Explorer {
     }
 }
 
-pub fn explorer_handle_enter(app: &mut App) {
-        if let Some(selected_idx) = app.explorer.state.selected() {
-            let entry = &app.explorer.files[selected_idx];
-            if entry.e_type == EntryType::Dir {
-                let mut dir_path = PathBuf::from(app.path_field.input.value());
-                dir_path.push(entry.name.clone());
-                app.path_field.set_value(String::from(dir_path.to_string_lossy()));
-                app.explorer.refresh(&dir_path, app.include_hidden);
+pub fn explorer_handle_enter(app: &mut App) -> Result<(), String> {
+    if let Some(selected_idx) = app.explorer.state.selected() {
+        let entry = &app.explorer.files[selected_idx];
+        if entry.e_type == EntryType::Dir {
+            let mut dir_path = PathBuf::from(app.path_field.input.value());
+            dir_path.push(entry.name.clone());
+            app.path_field.set_value(String::from(dir_path.to_string_lossy()));
+            app.explorer.refresh(&dir_path, app.include_hidden);
+        } else {
+            let mut file_path = PathBuf::from(app.path_field.input.value());
+            file_path.push(entry.name.clone());
+            if app.explorer.files[selected_idx].is_exec {
+                let _ = Command::new(file_path).spawn();
             } else {
-                let mut file_path = PathBuf::from(app.path_field.input.value());
-                file_path.push(entry.name.clone());
-                if app.explorer.files[selected_idx].is_exec {
-                    let _ = Command::new(file_path).spawn();
-                } else {
-                    handle_file_open(&file_path, app.explorer.file_open_options.clone());
-                }
+                handle_file_open(&file_path, app.explorer.file_open_options.clone())?;
             }
         }
     }
+    Ok(())
+}
 
 impl HandlesInput for Explorer {
     fn handle_input(&mut self, event: Event) -> Result<(), String> {

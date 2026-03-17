@@ -112,187 +112,188 @@ pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
     }
 }
 
-pub fn handle_file_open(file: &Path, options: FileOptions) {
+pub fn handle_file_open(file: &Path, options: FileOptions) -> Result<(), String> {
     if let Some(file_ext) = file.extension() {
         match String::from(file_ext.to_string_lossy()).as_str() {
             "txt" => {
                 if let Some(command) = options.txt {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "pdf" => {
                 if let Some(command) = options.pdf {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "mp4" => {
                 if let Some(command) = options.mp4 {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "mp3" => {
                 if let Some(command) = options.mp3 {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "c" => {
                 if let Some(command) = options.c {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "cpp" => {
                 if let Some(command) = options.cpp {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "rs" => {
                 if let Some(command) = options.rs {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "png" => {
                 if let Some(command) = options.png {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "jpg" => {
                 if let Some(command) = options.jpg {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "svg" => {
                 if let Some(command) = options.svg {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "sh" => {
                 if let Some(command) = options.sh {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "html" => {
                 if let Some(command) = options.html {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "css" => {
                 if let Some(command) = options.css {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "js" => {
                 if let Some(command) = options.js {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "jsx" => {
                 if let Some(command) = options.jsx {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "ts" => {
                 if let Some(command) = options.ts {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "tsx" => {
                 if let Some(command) = options.tsx {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "md" => {
                 if let Some(command) = options.md {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "py" => {
                 if let Some(command) = options.py {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "java" => {
                 if let Some(command) = options.java {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "kt" => {
                 if let Some(command) = options.kt {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "odin" => {
                 if let Some(command) = options.odin {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "zig" => {
                 if let Some(command) = options.zig {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "gitignore" => {
                 if let Some(command) = options.gitignore {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "rb" => {
                 if let Some(command) = options.rb {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "json" => {
                 if let Some(command) = options.json {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "toml" => {
                 if let Some(command) = options.toml {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "mkv" => {
                 if let Some(command) = options.mkv {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "avi" => {
                 if let Some(command) = options.avi {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "odt" => {
                 if let Some(command) = options.odt {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "ods" => {
                 if let Some(command) = options.ods {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "odp" => {
                 if let Some(command) = options.odp {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "odg" => {
                 if let Some(command) = options.odg {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "jpeg" => {
                 if let Some(command) = options.jpeg {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             "gif" => {
                 if let Some(command) = options.gif {
-                    execute_command(command, file);
+                    execute_command(command, file)?;
                 }
             },
             _ => {}
         }
-    } 
+    }
+    Ok(()) 
 }
 
 fn split_command(cmd: String) -> (String, Vec<String>) {
@@ -304,13 +305,14 @@ fn split_command(cmd: String) -> (String, Vec<String>) {
     (String::from(cmd_split[0]), args)
 }
 
-pub fn execute_command(command: String, file: &Path) {
+pub fn execute_command(command: String, file: &Path) -> Result<(), String> {
     let (cmd, mut args) = split_command(command);
     if let Some(file_path) = file.to_str() {
         args.push(String::from(file_path));
-        if let Err(_err) = Command::new(cmd).args(args).spawn() {
+        if let Err(err) = Command::new(cmd).args(args).spawn() {
             // Handle error
-            // print!("Error during executing command: {}", err);
+            return Err(format!("Error in opening the application: {}", err));
         }
     }
+    Ok(())
 }

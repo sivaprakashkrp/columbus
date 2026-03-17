@@ -134,7 +134,7 @@ impl App {
                                                 }
                                             },
                                             CurrentWidget::Explorer => {
-                                                explorer_handle_enter(self);
+                                                explorer_handle_enter(self)?;
                                             }
                                             CurrentWidget::Drives => {
                                                 if let Some(selected_idx) = self.drives.state.selected() {
