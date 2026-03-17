@@ -2,6 +2,7 @@
 
 [![Built With Ratatui](https://img.shields.io/badge/Built_With_Ratatui-000?logo=ratatui&logoColor=fff)](https://ratatui.rs/)
 [![Crates.io](https://img.shields.io/crates/v/columbus.svg)](https://crates.io/crates/columbus)
+[![AUR Package](https://img.shields.io/aur/version/columbus)](https://aur.archlinux.org/packages/columbus)
 
 ![The current state of Columbus](./images/columbus-sample.png)
 
@@ -30,7 +31,11 @@ A Terminal User Interface(TUI) file explorer created in `Ratatui` and `Rust`.
 cargo install columbus
 ```
 
-<!-- ### From AUR -->
+### From AUR
+`columbus` is available in [AUR](https://aur.archlinux.org/packages/columbus) from version `v0.1.1`. You can install `columbus` from `AUR` through `yay` or any package manager that installs from the `AUR`.
+```bash
+yay -S columbus
+```
 
 ### Building from source
 
