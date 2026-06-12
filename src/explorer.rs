@@ -46,10 +46,17 @@ pub struct Explorer {
 impl FileEntry {
     fn ref_array(&self) -> [String; 4] {
         let type_of_entry: String;
-        if self.e_type == EntryType::Dir {type_of_entry = String::from(" 🖿 ")} else {type_of_entry = String::from(" 🗎 ")};
+        let display_name: String;
+        if self.e_type == EntryType::Dir {
+            type_of_entry = String::from(" 🖿 ");
+            display_name = format!("{}/", self.name);
+        } else {
+            type_of_entry = String::from(" 🗎 ");
+            display_name = self.name.clone();
+        };
         [
             type_of_entry,
-            self.name.clone(),
+            display_name,
             self.size.clone(),
             self.modified_at.clone(),
         ]
