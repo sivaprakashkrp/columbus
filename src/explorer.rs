@@ -41,6 +41,7 @@ pub struct Explorer {
     pub state: TableState,
     pub scroll_state: ScrollbarState,
     pub in_focus: bool,
+    pub delete_ongoing: bool,
 }
 
 impl FileEntry {
@@ -64,36 +65,32 @@ impl FileEntry {
 }
 
 const ITEM_HEIGHT: usize = 1;
+
 impl Explorer {
     pub fn new(path: &PathBuf, config_path: Option<PathBuf>, include_hidden: bool) -> Explorer {
         const ITEM_HEIGHT: usize = 1;
+        let render_data: Vec<FileEntry>;
+        let render_scrollbar_state: ScrollbarState;
         if let Ok(data_vec) = get_data(path, include_hidden, false, false, false) {
-            return Explorer {
-                root_path: PathBuf::from(path),
-                include_hidden: include_hidden,
-                files: data_vec.clone(),
-                copy_src_path: None,
-                copied_item: None,
-                file_is_cut: false,
-                file_open_options: read_file_options(config_path),
-                state: TableState::default().with_selected(0),
-                scroll_state: ScrollbarState::new((data_vec.len() - 1) * ITEM_HEIGHT),
-                in_focus: true,
-            };
+            render_data = data_vec;
+            render_scrollbar_state = ScrollbarState::new((render_data.len() - 1) * ITEM_HEIGHT);
         } else {
-            return Explorer {
-                root_path: PathBuf::from(path),
-                include_hidden: include_hidden,
-                files: vec![],
-                state: TableState::default().with_selected(0),
-                scroll_state: ScrollbarState::new(ITEM_HEIGHT),
-                in_focus: true,
-                copy_src_path: None,
-                copied_item: None,
-                file_is_cut: false,
-                file_open_options: read_file_options(config_path),
-            };
+            render_data = vec![];
+            render_scrollbar_state = ScrollbarState::new(ITEM_HEIGHT);
         }
+        return Explorer {
+            root_path: PathBuf::from(path),
+            include_hidden: include_hidden,
+            files: render_data,
+            copy_src_path: None,
+            copied_item: None,
+            file_is_cut: false,
+            file_open_options: read_file_options(config_path),
+            state: TableState::default().with_selected(0),
+            scroll_state: render_scrollbar_state,
+            in_focus: true,
+            delete_ongoing: false,
+        };
     }
 
     pub fn refresh(&mut self, path: &PathBuf, include_hidden: bool) {
