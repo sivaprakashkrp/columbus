@@ -108,6 +108,15 @@ impl App {
                                     KeyCode::Char('k') | KeyCode::Up => self.help_overview.scroll = self.help_overview.scroll.saturating_sub(1),
                                     _ => (),
                                 }
+                            } else if self.focus_on == CurrentWidget::Explorer && key_event.code == KeyCode::Delete {
+                                self.log_panel.set_log("Do you want to permenantly delete the item? (Y/N)".to_string());
+                                self.explorer.delete_ongoing = true;
+                            } else if self.focus_on == CurrentWidget::Explorer && self.explorer.delete_ongoing {
+                                match key_event.code {
+                                    KeyCode::Char('y') | KeyCode::Char('Y') => self.explorer.handle_delete()?,
+                                    _ => {}
+                                }
+                                self.explorer.delete_ongoing = false;
                             } else {
                                 match key_event.code {
                                     KeyCode::Tab => {

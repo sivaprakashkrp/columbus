@@ -269,7 +269,7 @@ impl Explorer {
         Ok(())
     }
 
-    fn handle_delete(&mut self) -> Result<(), String> {
+    pub fn handle_delete(&mut self) -> Result<(), String> {
         if let Some(idx) = self.state.selected() {
             let mut file_path = self.root_path.clone();
             file_path = file_path.join(self.files[idx].name.clone());
@@ -312,7 +312,7 @@ impl HandlesInput for Explorer {
                         KeyCode::Char('r') => {
                             self.refresh(&self.root_path.clone(), self.include_hidden);
                         }
-                        KeyCode::Delete => self.handle_delete()?,
+                        // KeyCode::Delete => self.handle_delete()?,
                         KeyCode::Char('c') => self.handle_copy(),
                         KeyCode::Char('v') => self.handle_paste()?,
                         KeyCode::Char('x') => {
