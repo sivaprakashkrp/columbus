@@ -87,7 +87,7 @@ pub fn handle_command_enter(app: &mut App) {
                 app.command.set_value(String::from("The file was created successfully"));
             }
             app.explorer.refresh(&dir_path, app.include_hidden);
-            app.command.input.reset();},
+        },
         "b" => {
             let dir_path = PathBuf::from(app.path_field.input.value());
             let mut new_file = dir_path.clone();
@@ -98,7 +98,6 @@ pub fn handle_command_enter(app: &mut App) {
                 app.command.set_value(String::from("The Directory was created successfully"));
             }
             app.explorer.refresh(&dir_path, app.include_hidden);
-            app.command.input.reset();
         },
         "r" => {
             let root = PathBuf::from(app.path_field.input.value());
@@ -110,7 +109,6 @@ pub fn handle_command_enter(app: &mut App) {
                 app.log_panel.set_log(String::from("File to rename not found"));
             }
             app.explorer.refresh(&root, app.include_hidden);
-            app.command.input.reset();
         },
         "term" => {
             if cfg!(target_os = "windows") {
@@ -141,6 +139,7 @@ pub fn handle_command_enter(app: &mut App) {
         "exit" | "q" | "quit" => app.exit_app(),
         _ => {}
     }
+    app.command.input.reset();
     focus_to(app, CurrentWidget::Explorer);
 }
 
