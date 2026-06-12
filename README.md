@@ -79,7 +79,10 @@ columbus [OPTIONS] [<PATH>]
 * `c` -> Copy the selected file/directory
 * `v` -> Paste the copied file/directory
 * `x` -> Cut the selected file/directory
-* `delete` -> Delete the selected item
+* `delete` -> Deletes the selected item permenantly 
+    * After a Confirmation Dialog (See the log field)
+        * `y` - Confirm
+        * *Any other key* - Deny
 * `Enter` ->
     * **On File** -> Opens the file if the file extension is supported and defined in `file_options.toml` configuration file.
     * **On Directory** -> Navigates into the directory.
