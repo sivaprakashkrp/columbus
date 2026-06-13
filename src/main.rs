@@ -1,5 +1,5 @@
 use clap::Parser;
-use crossterm::event::{Event, KeyCode, KeyEventKind};
+use crossterm::event::{Event, KeyCode, KeyEventKind, KeyModifiers};
 use ratatui::{
     DefaultTerminal, Frame, layout::{Constraint, Direction, Layout, Rect}, style::Stylize, widgets::{Block, BorderType, Paragraph}
 };
@@ -108,7 +108,7 @@ impl App {
                                     KeyCode::Char('k') | KeyCode::Up => self.help_overview.scroll = self.help_overview.scroll.saturating_sub(1),
                                     _ => (),
                                 }
-                            } else if self.focus_on == CurrentWidget::Explorer && key_event.code == KeyCode::Delete {
+                            } else if self.focus_on == CurrentWidget::Explorer && key_event.code == KeyCode::Delete && key_event.modifiers.contains(KeyModifiers::SHIFT) {
                                 self.log_panel.set_log("Do you want to permenantly delete the item? (Y/N)".to_string());
                                 self.explorer.delete_ongoing = true;
                             } else if self.focus_on == CurrentWidget::Explorer && self.explorer.delete_ongoing {

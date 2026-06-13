@@ -278,6 +278,23 @@ impl Explorer {
         self.refresh(&self.root_path.clone(), self.include_hidden);
         Ok(())
     }
+
+    fn move_item_to_trash(&mut self) -> Result<(), String> {
+        if let Some(idx) = self.state.selected() {
+            let mut file_path = self.root_path.clone();
+            file_path = file_path.join(self.files[idx].name.clone());
+            match trash::delete(file_path) {
+                Ok(_) => {
+                    self.refresh(&self.root_path.clone(), self.include_hidden);
+                    return Ok(());
+                },
+                Err(e) => {
+                    return Err(format!("Error in moving item to trash: {}", e));
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 pub fn explorer_handle_enter(app: &mut App) -> Result<(), String> {
@@ -312,7 +329,7 @@ impl HandlesInput for Explorer {
                         KeyCode::Char('r') => {
                             self.refresh(&self.root_path.clone(), self.include_hidden);
                         }
-                        // KeyCode::Delete => self.handle_delete()?,
+                        KeyCode::Delete => self.move_item_to_trash()?,
                         KeyCode::Char('c') => self.handle_copy(),
                         KeyCode::Char('v') => self.handle_paste()?,
                         KeyCode::Char('x') => {

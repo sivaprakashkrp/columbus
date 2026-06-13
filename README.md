@@ -79,7 +79,8 @@ columbus [OPTIONS] [<PATH>]
 * `c` -> Copy the selected file/directory
 * `v` -> Paste the copied file/directory
 * `x` -> Cut the selected file/directory
-* `delete` -> Deletes the selected item permenantly 
+* `delete` -> Moves the selected file/directory to Trash (Recycle Bin in **Windows**)
+* `SHIFT` + `delete` -> Deletes the selected item permenantly 
     * After a Confirmation Dialog (See the log field)
         * `y` - Confirm
         * *Any other key* - Deny
