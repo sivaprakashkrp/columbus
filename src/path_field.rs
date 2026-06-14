@@ -8,7 +8,7 @@ use ratatui::{
 use std::path::{Path};
 use tui_input::{Input, InputRequest, backend::crossterm::EventHandler};
 
-use crate::{dependencies::{HandlesInput, InputMode}};
+use crate::{color_theme::ColorTheme, dependencies::{HandlesInput, InputMode}};
 
 #[derive(Debug, Default, Clone)]
 pub struct PathField {
@@ -17,14 +17,16 @@ pub struct PathField {
     /// Current input mode
     pub input_mode: InputMode,
     pub in_focus: bool,
+    pub color_theme: ColorTheme,
 }
 
 impl PathField {
-    pub fn new(path: &Path) -> PathField {
+    pub fn new(path: &Path, read_color_theme: ColorTheme) -> PathField {
         PathField {
             input: Input::new(String::from(path.to_string_lossy())),
             input_mode: InputMode::Normal,
             in_focus: false,
+            color_theme: read_color_theme,
         }
     }
 

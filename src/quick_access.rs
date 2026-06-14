@@ -13,7 +13,7 @@ use ratatui::{
 use serde::{Deserialize, Serialize};
 use toml::de::Error;
 
-use crate::{App, dependencies::HandlesInput};
+use crate::{App, color_theme::ColorTheme, dependencies::HandlesInput};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct QAFileEntry {
@@ -32,6 +32,7 @@ pub struct QuickAccess {
     pub state: TableState,
     pub scroll_state: ScrollbarState,
     pub in_focus: bool,
+    pub color_theme: ColorTheme,
 }
 
 impl QAFileEntry {
@@ -44,7 +45,7 @@ impl QAFileEntry {
 
 const ITEM_HEIGHT: usize = 1;
 impl QuickAccess {
-    pub fn new() -> QuickAccess {
+    pub fn new(read_color_theme: ColorTheme) -> QuickAccess {
         const ITEM_HEIGHT: usize = 1;
         let data_vec = get_qa_files();
         QuickAccess {
@@ -52,6 +53,7 @@ impl QuickAccess {
             state: TableState::default().with_selected(0),
             scroll_state: ScrollbarState::new((&data_vec.len() - 1) * ITEM_HEIGHT),
             in_focus: false,
+            color_theme: read_color_theme,
         }
     }
 

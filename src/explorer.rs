@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Block, Cell, HighlightSpacing, Row, Scrollbar, ScrollbarOrientation, ScrollbarState, Table, TableState},
 };
 
-use crate::{App, dependencies::delete, open_files::{FileOptions, handle_file_open, read_file_options}};
+use crate::{App, color_theme::{ColorTheme, get_color_theme}, dependencies::delete, open_files::{FileOptions, handle_file_open, read_file_options}};
 use crate::{
     dependencies::{HandlesInput, copy_directory, copy_file},
     file_deps::get_data,
@@ -42,6 +42,7 @@ pub struct Explorer {
     pub scroll_state: ScrollbarState,
     pub in_focus: bool,
     pub delete_ongoing: bool,
+    pub color_theme: ColorTheme,
 }
 
 impl FileEntry {
@@ -67,7 +68,7 @@ impl FileEntry {
 const ITEM_HEIGHT: usize = 1;
 
 impl Explorer {
-    pub fn new(path: &PathBuf, config_path: Option<PathBuf>, include_hidden: bool) -> Explorer {
+    pub fn new(path: &PathBuf, config_path: Option<PathBuf>, include_hidden: bool, read_color_theme: ColorTheme) -> Explorer {
         const ITEM_HEIGHT: usize = 1;
         let render_data: Vec<FileEntry>;
         let render_scrollbar_state: ScrollbarState;
@@ -90,6 +91,7 @@ impl Explorer {
             scroll_state: render_scrollbar_state,
             in_focus: true,
             delete_ongoing: false,
+            color_theme: read_color_theme,
         };
     }
 

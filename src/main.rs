@@ -17,8 +17,10 @@ mod quick_access;
 mod open_files;
 mod log_panel;
 mod help_overview;
+mod color_theme;
+
 use crate::{
-    command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, help_overview::HelpOverview, log_panel::LogPanel, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
+    color_theme::{ColorTheme, get_color_theme}, command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, help_overview::HelpOverview, log_panel::LogPanel, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
@@ -60,6 +62,7 @@ pub struct App {
     log_panel: LogPanel,
     help_overview: HelpOverview,
     help_shown: bool,
+    color_theme: ColorTheme,
 }
 
 #[derive(Debug, Parser)]
@@ -83,16 +86,19 @@ struct CLI {
     #[arg(
         short = 'c',
         long = "config",
-        help = "Path to file_options.toml file"
+        help = "Path to file_options.toml file (if not in default config directory)"
     )]
     file_options_path: Option<PathBuf>,
+    #[arg(
+        short = 'C',
+        long = "color-theme",
+        help = "Path to color_theme.toml file (if not in default config directory)"
+    )]
+    color_theme_path: Option<PathBuf>,
 }
 
 impl App {
     fn run(&mut self, terminal: &mut DefaultTerminal, rx: mpsc::Receiver<Event>) -> Result<(), String> {
-        // if let Err(err) = execute!(std::io::stdout(), EnableMouseCapture) {
-        //     return Err(format!("Error in capturing Mouse: {}", err));
-        // };
         terminal.draw(|frame| self.draw(frame)).expect("Unable to draw to the terminal");
         while !self.exit {
             if let Ok(rec_event) = rx.recv() {
@@ -225,27 +231,11 @@ impl App {
                             self.get_focused_widget().handle_input(rec_event)?;
                         }
                     },
-                    // Event::Mouse(mouse_event) => {
-                    //     match mouse_event.kind {
-                    //         MouseEventKind::Down(MouseButton::Left) => {
-                    //             match self.focus_on {
-                    //                 CurrentWidget::Explorer => {
-
-                    //                 }
-                    //                 _ => (),
-                    //             }
-                    //         }
-                    //         _ => (),
-                    //     }
-                    // },
                     _ => self.get_focused_widget().handle_input(rec_event)?,
                 }
             }
             terminal.draw(|frame| self.draw(frame)).expect("Unable to draw to the terminal");
         }
-        // if let Err(err) = execute!(std::io::stdout(), DisableMouseCapture) {
-        //     return Err(format!("Error in releasing captured mouse: {}", err))
-        // };
         Ok(())
     }
 
@@ -358,18 +348,21 @@ fn main() {
 
     let mut terminal = ratatui::init();
 
+    let color_theme = get_color_theme(cli.color_theme_path);
+
     let mut app: App = App {
         exit: false,
-        quick_access: QuickAccess::new(),
-        path_field: PathField::new(&current_path),
-        command: Command::new(),
-        explorer: Explorer::new(&current_path, cli.file_options_path,cli.include_hidden),
-        drives: Drives::new(),
+        quick_access: QuickAccess::new(color_theme.clone()),
+        path_field: PathField::new(&current_path, color_theme.clone()),
+        command: Command::new(color_theme.clone()),
+        explorer: Explorer::new(&current_path, cli.file_options_path,cli.include_hidden, color_theme.clone()),
+        drives: Drives::new(color_theme.clone()),
         focus_on: CurrentWidget::Explorer,
         include_hidden: cli.include_hidden,
         log_panel: LogPanel::new(),
-        help_overview: HelpOverview::new(),
+        help_overview: HelpOverview::new(color_theme.clone()),
         help_shown: false,
+        color_theme: color_theme.clone(),
     };
 
     // Spawning a input thread

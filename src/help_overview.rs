@@ -5,6 +5,8 @@ use ratatui::{
     widgets::{Block, Borders, Clear, Padding, Paragraph, Widget, Wrap},
 };
 
+use crate::color_theme::ColorTheme;
+
 // HelpOverview Struct and render method copied from https://ratatui.rs/recipes/render/overwrite-regions/ and edited as per requirements of the Application
 
 #[derive(Debug, Default)]
@@ -16,10 +18,11 @@ pub struct HelpOverview {
     pub style: Style,
     pub scroll: u16,
     pub max_scroll: u16,
+    pub color_theme: ColorTheme,
 }
 
 impl HelpOverview {
-    pub fn new() -> HelpOverview {
+    pub fn new(read_color_theme: ColorTheme) -> HelpOverview {
         let content_text = "
             Keybindings
             ===========
@@ -94,6 +97,7 @@ impl HelpOverview {
             scroll: 0,
             // Excess scroll space for smaller displays
             max_scroll: 60,
+            color_theme: read_color_theme,
         }
     }
 

@@ -12,7 +12,7 @@ use ratatui::{
 };
 use sysinfo::Disks;
 
-use crate::{dependencies::HandlesInput,};
+use crate::{color_theme::ColorTheme, dependencies::HandlesInput};
 
 #[derive(Debug, Clone)]
 pub struct DriveEntry {
@@ -25,6 +25,7 @@ pub struct Drives {
     pub state: TableState,
     pub scroll_state: ScrollbarState,
     pub in_focus: bool,
+    pub color_theme: ColorTheme,
 }
 
 impl DriveEntry {
@@ -38,7 +39,7 @@ impl DriveEntry {
 
 const ITEM_HEIGHT: usize = 1;
 impl Drives {
-    pub fn new() -> Drives {
+    pub fn new(read_color_theme: ColorTheme) -> Drives {
         const ITEM_HEIGHT: usize = 1;
         let data_vec = get_drives();
         Drives {
@@ -46,6 +47,7 @@ impl Drives {
             state: TableState::default().with_selected(0),
             scroll_state: ScrollbarState::new((&data_vec.len() - 1) * ITEM_HEIGHT),
             in_focus: false,
+            color_theme: read_color_theme,
         }
     }
 

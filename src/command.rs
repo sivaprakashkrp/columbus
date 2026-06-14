@@ -4,7 +4,7 @@ use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{Frame, layout::Rect, style::{Color, Style, Stylize}, text::{Line}, widgets::{Block, Paragraph}};
 use tui_input::{Input, InputRequest, backend::crossterm::EventHandler};
 
-use crate::{App, CurrentWidget, dependencies::{HandlesInput, InputMode, focus_to}};
+use crate::{App, CurrentWidget, color_theme::ColorTheme, dependencies::{HandlesInput, InputMode, focus_to}};
 
 pub struct Command {
     /// Current value of the input box
@@ -12,14 +12,16 @@ pub struct Command {
     /// Current input mode
     pub input_mode: InputMode,
     pub in_focus: bool,
+    pub color_theme: ColorTheme,
 }
 
 impl Command {
-    pub fn new() -> Command {
+    pub fn new(read_color_theme: ColorTheme) -> Command {
         Command {
             input: Input::new(String::from("")),
             input_mode: InputMode::Normal,
             in_focus: false,
+            color_theme: read_color_theme,
         }
     }
 
