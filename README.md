@@ -28,7 +28,7 @@ A Terminal User Interface(TUI) file explorer created in `Ratatui` and `Rust`.
 ### With Cargo
 `columbus` is now available in [crates.io](https://crates.io/crates/columbus). You can now install `columbus` from `cargo` with the command:
 ```bash
-cargo install columbus
+cargo install --locked columbus
 ```
 
 ### From AUR
