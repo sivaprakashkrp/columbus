@@ -163,6 +163,12 @@ The `log` field is present in the bottom of the screen. This is to log any error
 
 ## Configuration files
 
+For the configuration files to be read in the default location in **Linux**, please make sure that you have a environment variable called
+```bash
+XDG_CONFIG_HOME="/home/<username>/.config"
+```
+This environment variable is how `columbus` gets to the `.config` directory in your system. If it is not defined already, create it. Or you can use the custom path arguments while calling `columbus` and create an alias.
+
 ### `file_options.toml` file structure
 
 `columbus` depends on `file_options.toml` configuration file for opening files. Hence absence of `file_options.toml` means you cannot open any file through `columbus`.
