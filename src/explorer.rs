@@ -154,8 +154,8 @@ impl Explorer {
             .height(1);
         let rows = self.files.iter().enumerate().map(|(i, data)| {
             let color = match i % 2 {
-                0 => Color::from_u32(0x00001122),
-                _ => Color::from_u32(0x00112233),
+                0 => self.color_theme.explorer_bg_1,
+                _ => self.color_theme.explorer_bg_2,
             };
             let item = data.ref_array();
             item.into_iter()

@@ -32,7 +32,7 @@ cargo install columbus
 ```
 
 ### From AUR
-`columbus` is available in [AUR](https://aur.archlinux.org/packages/columbus) from version `v0.1.1`. You can install `columbus` from `AUR` through `yay` or any package manager that installs from the `AUR`.
+`columbus` is available in [AUR](https://aur.archlinux.org/packages/columbus). You can install `columbus` from `AUR` through `yay` or any package manager that installs from the `AUR`.
 ```bash
 yay -S columbus
 ```
@@ -60,6 +60,8 @@ columbus [OPTIONS] [<PATH>]
 ### Options
 
 * `-a` or `--include-hidden` -> To display the hidden files also in explorer
+* `-c` or `--config` -> Custom path to `file_options.toml`
+* `-C` or `--color-theme` -> Custom path to `color_theme.toml`
 
 ## Keybindings
 
@@ -161,13 +163,15 @@ The `log` field is present in the bottom of the screen. This is to log any error
 
 ## Configuration files
 
+### `file_options.toml` file structure
+
 `columbus` depends on `file_options.toml` configuration file for opening files. Hence absence of `file_options.toml` means you cannot open any file through `columbus`.
 
 `file_options.toml` is searched for in `D:\Applications\columbus\file_options.toml` location in **Windows**.
 
 In **Linux**, `columbus` looks for the file in `~/.config/columbus/file_options.toml`
 
-### `file_options.toml` file structure
+To have `color_theme.toml` at a custom path, use the `-C` or `--color-theme` option with the path to the file while opening `columbus`.
 
 The configuration file is in the structure:
 ```toml
@@ -211,11 +215,31 @@ The file opening mechanism is totally based on the commands provided by the user
 
 **NOTE:** DO NOT open other TUI applications from `columbus`. For such applications, please create a seperate terminal window.
 
+### `color_theme.toml` file structure
+
+The `color_theme.toml` file is used to customize the color theme of `columbus`. The file structure is:
+```toml
+primary = "#00f0ff"
+header = "#0000ff"
+border = "#ffd700"
+selector = "#00f0ff"
+explorer_bg_1 = "#001122"
+explorer_bg_2 = "#112233"
+```
+Each key takes a color code (hex values). Enclose the Hex color code in string quotes. Don't forget to add # in the color codes.
+
+The `color_theme.toml` file should be located in 
+- `~/.config/columbus/color_theme.toml` location in **Linux** Distros
+- `D:\Applications\columbus\color_theme.toml` location in **Windows** Systems.
+
+To have `color_theme.toml` at a custom path, use the `-C` or `--color-theme` option with the path to the file while opening `columbus`.
+
 ## Future Enhancements
 
 - [ ] Add Mouse Events to widgets
 - [ ] Add all types of file extensions for open on enter in explorer
 - [ ] Enable opening of TUI apps from columbus in the same terminal
+- [x] Add Color Theme Customization
 
 ---
 

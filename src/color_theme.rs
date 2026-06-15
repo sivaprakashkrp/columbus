@@ -9,6 +9,8 @@ pub struct ColorTheme {
     pub header: Color,
     pub border: Color,
     pub selector: Color,
+    pub explorer_bg_1: Color,
+    pub explorer_bg_2: Color,
 }
 
 #[derive(Debug, Deserialize, Clone)]
@@ -17,6 +19,8 @@ struct ThemeConfig {
     pub header: String,
     pub border: String,
     pub selector: String,
+    pub explorer_bg_1: String,
+    pub explorer_bg_2: String,
 }
 
 fn read_color_theme(config_path: Option<PathBuf>) -> ThemeConfig {
@@ -54,6 +58,8 @@ fn read_color_theme(config_path: Option<PathBuf>) -> ThemeConfig {
         header: String::from("#0000ff"),
         border: String::from("#ffd700"),
         selector: String::from("#00f0ff"),
+        explorer_bg_1: String::from("#001122"),
+        explorer_bg_2: String::from("#112233"),
     }
 }
 
@@ -64,5 +70,7 @@ pub fn get_color_theme(config_path: Option<PathBuf>) -> ColorTheme {
         header: read_theme.header.parse().unwrap_or(Color::Blue),
         border: read_theme.border.parse().unwrap_or(Color::Yellow),
         selector: read_theme.selector.parse().unwrap_or(Color::Cyan),
+        explorer_bg_1: read_theme.explorer_bg_1.parse().unwrap_or(Color::from_u32(0x00001122)),
+        explorer_bg_2: read_theme.explorer_bg_2.parse().unwrap_or(Color::from_u32(0x00112233)),
     }
 }
