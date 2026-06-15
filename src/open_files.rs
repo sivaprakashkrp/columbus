@@ -1,6 +1,5 @@
 use std::{fs, path::Path, process::Command};
 use std::path::PathBuf;
-use std::env;
 use serde::{Deserialize, Serialize};
 use toml::de::Error;
 
@@ -53,6 +52,8 @@ pub fn read_file_options(config_path: Option<PathBuf>) -> FileOptions {
             }
             #[cfg(target_os = "linux")]
             {
+                use std::env;
+
                 let mut file_config_path: PathBuf;
                 if let Ok(home_path) = env::var("XDG_CONFIG_HOME") {
                     file_config_path = PathBuf::from(home_path);

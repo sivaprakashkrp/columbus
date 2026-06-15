@@ -33,6 +33,8 @@ fn read_color_theme(config_path: Option<PathBuf>) -> ThemeConfig {
             }
             #[cfg(target_os = "linux")]
             {
+                use std::env;
+
                 let mut file_config_path: PathBuf;
                 if let Ok(home_path) = env::var("XDG_CONFIG_HOME") {
                     file_config_path = PathBuf::from(home_path);
