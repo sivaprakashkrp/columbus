@@ -6,18 +6,20 @@ use serde::Deserialize;
 #[derive(Debug, Default, Clone)]
 pub struct ColorTheme {
     pub primary: Color,
-    pub secondary: Color,
+    pub header: Color,
     pub border: Color,
+    pub selector: Color,
 }
 
 #[derive(Debug, Deserialize, Clone)]
 struct ThemeConfig {
     pub primary: String,
-    pub secondary: String,
+    pub header: String,
     pub border: String,
+    pub selector: String,
 }
 
-pub fn read_color_theme(config_path: Option<PathBuf>) -> ThemeConfig {
+fn read_color_theme(config_path: Option<PathBuf>) -> ThemeConfig {
     let config_path = match config_path {
         Some(input_config_path ) => input_config_path,
         None => {
@@ -49,8 +51,9 @@ pub fn read_color_theme(config_path: Option<PathBuf>) -> ThemeConfig {
     }
     ThemeConfig {
         primary: String::from("#00f0ff"),
-        secondary: String::from("#0000ff"),
+        header: String::from("#0000ff"),
         border: String::from("#ffd700"),
+        selector: String::from("#00f0ff"),
     }
 }
 
@@ -58,7 +61,8 @@ pub fn get_color_theme(config_path: Option<PathBuf>) -> ColorTheme {
     let read_theme = read_color_theme(config_path);
     ColorTheme {
         primary: read_theme.primary.parse().unwrap_or(Color::Cyan),
-        secondary: read_theme.secondary.parse().unwrap_or(Color::Blue),
+        header: read_theme.header.parse().unwrap_or(Color::Blue),
         border: read_theme.border.parse().unwrap_or(Color::Yellow),
+        selector: read_theme.selector.parse().unwrap_or(Color::Cyan),
     }
 }

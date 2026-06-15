@@ -88,14 +88,14 @@ impl QuickAccess {
     }
 
     pub fn create_qa_entries_table(&mut self, frame: &mut Frame, area: Rect) {
-        let header_style = Style::default().fg(Color::Black).bg(Color::Blue);
+        let header_style = Style::default().fg(Color::Black).bg(self.color_theme.header);
         let selected_row_style = Style::default()
             .add_modifier(Modifier::REVERSED)
-            .fg(Color::Cyan);
+            .fg(self.color_theme.selector);
         let selected_col_style = Style::default().fg(Color::Yellow);
         let selected_cell_style = Style::default()
             .add_modifier(Modifier::REVERSED)
-            .fg(Color::Blue);
+            .fg(self.color_theme.selector);
 
         let header = ["File Name"]
             .into_iter()
@@ -112,7 +112,7 @@ impl QuickAccess {
             item.into_iter()
                 .map(|content| Cell::from(Text::from(content.to_string())))
                 .collect::<Row>()
-                .style(Style::new().fg(Color::Cyan).bg(color))
+                .style(Style::new().fg(self.color_theme.primary).bg(color))
                 .height(1)
         });
         let bar = " ▶ ";
@@ -128,7 +128,7 @@ impl QuickAccess {
             .title(" Quick Access ")
             .border_style(
                 if self.in_focus {
-                    Style::default().fg(Color::Cyan)
+                    Style::default().fg(self.color_theme.border)
                 } else {
                     Style::default()
                 }

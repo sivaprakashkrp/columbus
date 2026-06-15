@@ -20,7 +20,7 @@ mod help_overview;
 mod color_theme;
 
 use crate::{
-    color_theme::{ColorTheme, get_color_theme}, command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, help_overview::HelpOverview, log_panel::LogPanel, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
+    color_theme::{get_color_theme}, command::{Command, handle_command_enter}, dependencies::{HandlesInput, InputMode, focus_to, focus_toggler}, drives::Drives, explorer::{Explorer, explorer_handle_enter}, help_overview::HelpOverview, log_panel::LogPanel, path_field::PathField, quick_access::{QuickAccess, update_qa_files, write_qa_data}
 };
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, EnumIter)]
@@ -62,7 +62,6 @@ pub struct App {
     log_panel: LogPanel,
     help_overview: HelpOverview,
     help_shown: bool,
-    color_theme: ColorTheme,
 }
 
 #[derive(Debug, Parser)]
@@ -362,7 +361,6 @@ fn main() {
         log_panel: LogPanel::new(),
         help_overview: HelpOverview::new(color_theme.clone()),
         help_shown: false,
-        color_theme: color_theme.clone(),
     };
 
     // Spawning a input thread

@@ -18,7 +18,6 @@ pub struct HelpOverview {
     pub style: Style,
     pub scroll: u16,
     pub max_scroll: u16,
-    pub color_theme: ColorTheme,
 }
 
 impl HelpOverview {
@@ -91,13 +90,12 @@ impl HelpOverview {
         HelpOverview {
             title: String::from(" Help Overview "),
             content: content_text.to_string(),
-            border_style: Style::new().cyan(),
-            title_style: Style::new().cyan(),
+            border_style: Style::new().fg(read_color_theme.border),
+            title_style: Style::new().fg(read_color_theme.primary),
             style: Style::default(),
             scroll: 0,
             // Excess scroll space for smaller displays
             max_scroll: 60,
-            color_theme: read_color_theme,
         }
     }
 

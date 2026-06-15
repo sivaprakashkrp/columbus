@@ -1,7 +1,7 @@
 use std::{fs::{self, File, create_dir_all}, path::PathBuf};
 
 use crossterm::event::{Event, KeyCode, KeyEventKind};
-use ratatui::{Frame, layout::Rect, style::{Color, Style, Stylize}, text::{Line}, widgets::{Block, Paragraph}};
+use ratatui::{Frame, layout::Rect, style::{Style, Stylize}, text::{Line}, widgets::{Block, Paragraph}};
 use tui_input::{Input, InputRequest, backend::crossterm::EventHandler};
 
 use crate::{App, CurrentWidget, color_theme::ColorTheme, dependencies::{HandlesInput, InputMode, focus_to}};
@@ -38,7 +38,7 @@ impl Command {
         let scroll = self.input.visual_scroll(width as usize);
         let style = match self.input_mode {
             InputMode::Normal => Style::default(),
-            InputMode::Editing => Color::Cyan.into(),
+            InputMode::Editing => self.color_theme.primary.into(),
         };
         let instructions = Line::from(vec![
             " <Tab>".blue().bold(),
@@ -58,7 +58,7 @@ impl Command {
                 .title_bottom(instructions)
                 .border_style(
                         if self.in_focus {
-                            Style::default().fg(Color::Cyan)
+                            Style::default().fg(self.color_theme.border)
                         } else {
                             Style::default()
                         }

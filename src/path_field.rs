@@ -2,7 +2,7 @@ use crossterm::event::{Event, KeyCode, KeyEventKind};
 use ratatui::{
     Frame,
     layout::Rect,
-    style::{Color, Style},
+    style::{Style},
     widgets::{Block, Paragraph},
 };
 use std::path::{Path};
@@ -43,7 +43,7 @@ impl PathField {
         let scroll = self.input.visual_scroll(width as usize);
         let style = match self.input_mode {
             InputMode::Normal => Style::default(),
-            InputMode::Editing => Color::Cyan.into(),
+            InputMode::Editing => self.color_theme.primary.into(),
         };
         let input = Paragraph::new(self.input.value())
             .style(style)
@@ -54,7 +54,7 @@ impl PathField {
                     .title(" Path ")
                     .border_style(
                         if self.in_focus {
-                            Style::default().fg(Color::Cyan)
+                            Style::default().fg(self.color_theme.border)
                         } else {
                             Style::default()
                         }
